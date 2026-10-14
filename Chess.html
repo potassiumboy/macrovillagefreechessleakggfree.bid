@@ -1,0 +1,2576 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess Forge 3D — Custom Starting Pieces, Models & AI Bots</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js r128 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cinzel:wght@600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-dark: #0b0f19;
+            --panel-bg: rgba(17, 24, 39, 0.88);
+            --accent-gold: #f59e0b;
+            --accent-cyan: #06b6d4;
+        }
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-dark);
+            color: #f3f4f6;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        .font-display {
+            font-family: 'Cinzel', serif;
+        }
+        .font-mono-code {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(100, 116, 139, 0.5);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(148, 163, 184, 0.8);
+        }
+
+        /* Glassmorphism Panels */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.09);
+        }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .glass-card:hover {
+            border-color: rgba(245, 158, 11, 0.35);
+        }
+
+        /* Game Buttons */
+        .btn-game {
+            transition: all 0.18s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-game:active {
+            transform: translateY(1px) scale(0.98);
+        }
+        .tab-active {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(217, 119, 6, 0.08));
+            border-color: #f59e0b !important;
+            color: #fbbf24 !important;
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.18);
+        }
+        .piece-brush-active {
+            border-color: #f59e0b !important;
+            background: rgba(245, 158, 11, 0.22) !important;
+            box-shadow: 0 0 12px rgba(245, 158, 11, 0.35);
+            transform: translateY(-2px);
+        }
+
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #334155;
+            border-radius: 999px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #f59e0b;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -5px;
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
+            transition: transform 0.15s ease;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        #canvas-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 50% 35%, #1e293b 0%, #090d16 100%);
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            outline: none;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen overflow-hidden flex flex-col bg-slate-950 text-slate-100">
+
+    <header class="h-14 glass-panel border-b border-slate-800/80 px-3 sm:px-5 flex items-center justify-between z-30 shrink-0">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20 text-slate-950 font-black text-lg">
+                <i class="fa-solid fa-chess-knight"></i>
+            </div>
+            <div>
+                <h1 class="font-display font-bold text-sm sm:text-base tracking-wider text-amber-400 flex items-center gap-2">
+                    CHESS FORGE 3D
+                    <span class="hidden md:inline-block text-[10px] font-sans font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                        SANDBOX STUDIO
+                    </span>
+                </h1>
+                <p class="text-[11px] text-slate-400 hidden sm:block">Custom Starting Boards • Procedural 3D Models • Programmable AI Bots</p>
+            </div>
+        </div>
+
+        <!-- Mode Switcher Pills -->
+        <div class="flex items-center gap-1 sm:gap-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-800">
+            <button onclick="switchMainTab('play')" id="nav-tab-play" class="btn-game tab-active px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-semibold border border-transparent flex items-center gap-1.5 text-slate-300">
+                <i class="fa-solid fa-gamepad"></i>
+                <span>Match</span>
+            </button>
+            <button onclick="switchMainTab('editor')" id="nav-tab-editor" class="btn-game px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-semibold border border-transparent flex items-center gap-1.5 text-slate-300 hover:text-white">
+                <i class="fa-solid fa-chess-board"></i>
+                <span>Board Setup</span>
+            </button>
+            <button onclick="switchMainTab('models')" id="nav-tab-models" class="btn-game px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-semibold border border-transparent flex items-center gap-1.5 text-slate-300 hover:text-white">
+                <i class="fa-solid fa-cubes"></i>
+                <span>3D Models</span>
+            </button>
+            <button onclick="switchMainTab('bots')" id="nav-tab-bots" class="btn-game px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-semibold border border-transparent flex items-center gap-1.5 text-slate-300 hover:text-white">
+                <i class="fa-solid fa-robot"></i>
+                <span>Bot Lab</span>
+            </button>
+        </div>
+
+        <!-- Camera & Audio Quick Controls -->
+        <div class="flex items-center gap-1.5">
+            <button onclick="setCameraPreset('perspective')" title="3D Perspective Camera" class="btn-game p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700/60">
+                <i class="fa-solid fa-cube"></i>
+            </button>
+            <button onclick="setCameraPreset('top')" title="Top-Down Tactical View" class="btn-game p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700/60">
+                <i class="fa-solid fa-border-all"></i>
+            </button>
+            <button onclick="flipCameraSide()" title="Flip Board View" class="btn-game p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700/60">
+                <i class="fa-solid fa-retweet"></i>
+            </button>
+            <button onclick="toggleSound()" id="sound-btn" title="Toggle Sound Effects" class="btn-game p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-amber-400 text-xs border border-slate-700/60">
+                <i class="fa-solid fa-volume-high" id="sound-icon"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
+
+        <!-- Left / Center: 3D Interactive Chess Viewport -->
+        <section class="flex-1 relative flex flex-col min-h-[48vh] lg:min-h-0">
+            <div id="canvas-container" class="flex-1 relative">
+                <!-- Evaluation Bar (Left Edge) -->
+                <div class="absolute left-3 top-1/2 -translate-y-1/2 h-64 sm:h-80 w-3.5 rounded-full bg-slate-900 border border-slate-700/80 overflow-hidden flex flex-col z-10 shadow-xl" title="Position Evaluation">
+                    <div id="eval-bar-black" class="bg-slate-800 transition-all duration-500 w-full" style="height: 50%;"></div>
+                    <div id="eval-bar-white" class="bg-amber-400 transition-all duration-500 w-full" style="height: 50%;"></div>
+                </div>
+                <div id="eval-score-pill" class="absolute left-2 top-[calc(50%-11rem)] sm:top-[calc(50%-12.5rem)] px-1.5 py-0.5 rounded bg-slate-900/90 border border-slate-700 text-[10px] font-mono-code text-amber-300 z-10">
+                    0.0
+                </div>
+
+                <!-- Top HUD: Black Player / Bot Status -->
+                <div class="absolute top-3 left-10 right-3 flex items-center justify-between pointer-events-none z-10">
+                    <div class="glass-panel px-3 py-2 rounded-xl flex items-center gap-3 pointer-events-auto shadow-lg">
+                        <div class="w-8 h-8 rounded-lg bg-slate-800 border border-slate-600 flex items-center justify-center text-cyan-400 font-bold text-sm" id="hud-black-icon">
+                            <i class="fa-solid fa-robot"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span id="hud-black-name" class="text-xs font-bold text-white">Black AI</span>
+                                <span id="hud-black-badge" class="text-[10px] px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">Bot</span>
+                                <span id="hud-black-thinking" class="hidden text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse">
+                                    <i class="fa-solid fa-gear fa-spin mr-1"></i>Thinking...
+                                </span>
+                            </div>
+                            <div id="hud-black-captured" class="text-[11px] text-slate-400 h-4 flex items-center gap-0.5 mt-0.5"></div>
+                        </div>
+                    </div>
+
+                    <!-- Mode / Status Banner -->
+                    <div id="viewport-mode-banner" class="glass-panel px-3.5 py-1.5 rounded-full text-xs font-semibold text-amber-300 border border-amber-500/30 shadow-lg flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                        <span id="status-text">White's Turn</span>
+                    </div>
+                </div>
+
+                <!-- Bottom HUD: White Player / Bot Status & Camera Hint -->
+                <div class="absolute bottom-3 left-10 right-3 flex items-end justify-between pointer-events-none z-10">
+                    <div class="glass-panel px-3 py-2 rounded-xl flex items-center gap-3 pointer-events-auto shadow-lg">
+                        <div class="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/50 flex items-center justify-center text-amber-300 font-bold text-sm" id="hud-white-icon">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span id="hud-white-name" class="text-xs font-bold text-white">White Player</span>
+                                <span id="hud-white-badge" class="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">Human</span>
+                                <span id="hud-white-thinking" class="hidden text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse">
+                                    <i class="fa-solid fa-gear fa-spin mr-1"></i>Thinking...
+                                </span>
+                            </div>
+                            <div id="hud-white-captured" class="text-[11px] text-slate-400 h-4 flex items-center gap-0.5 mt-0.5"></div>
+                        </div>
+                    </div>
+
+                    <div class="hidden sm:flex glass-panel px-3 py-1.5 rounded-lg text-[11px] text-slate-400 items-center gap-2 pointer-events-auto">
+                        <span><i class="fa-solid fa-computer-mouse text-amber-400 mr-1"></i>Left-click: Select/Place</span>
+                        <span>•</span>
+                        <span>Right-drag: Orbit 3D</span>
+                        <span>•</span>
+                        <span>Scroll: Zoom</span>
+                    </div>
+                </div>
+
+                <!-- Floating Quick-Brush Bar when in Board Editor Mode -->
+                <div id="editor-floating-bar" class="hidden absolute bottom-16 left-1/2 -translate-x-1/2 glass-panel px-3 py-2 rounded-2xl border border-amber-500/40 shadow-2xl z-20 flex items-center gap-2 max-w-[95vw] overflow-x-auto">
+                    <span class="text-[11px] font-bold text-amber-400 uppercase tracking-wider px-1 shrink-0">Paint Mode:</span>
+                    <button onclick="setEditorColor('w')" id="float-color-w" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500 text-slate-950 shrink-0">White</button>
+                    <button onclick="setEditorColor('b')" id="float-color-b" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-800 text-slate-300 shrink-0">Black</button>
+                    <div class="h-5 w-px bg-slate-700 mx-1 shrink-0"></div>
+                    <div id="floating-piece-buttons" class="flex items-center gap-1 shrink-0"></div>
+                </div>
+            </div>
+        </section>
+
+        <aside class="w-full lg:w-[430px] xl:w-[460px] glass-panel border-t lg:border-t-0 lg:border-l border-slate-800/90 flex flex-col h-[52vh] lg:h-full z-20 shrink-0">
+
+            <!-- ================= TAB 1: MATCH & GAMEPLAY ================= -->
+            <div id="panel-play" class="flex-1 overflow-y-auto p-4 space-y-4">
+                <!-- Match Contenders Setup -->
+                <div class="glass-card rounded-xl p-3.5 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                            <i class="fa-solid fa-swords"></i> Match Contenders
+                        </h2>
+                        <button onclick="resetGameToStartingBoard()" class="btn-game px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1 shadow">
+                            <i class="fa-solid fa-rotate-right"></i> New Match
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <!-- White Controller -->
+                        <div class="bg-slate-900/90 p-2.5 rounded-lg border border-slate-800">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="text-xs font-bold text-amber-200 flex items-center gap-1">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-amber-100 inline-block border border-amber-400"></span> White
+                                </span>
+                                <button onclick="switchMainTab('bots'); selectBotSideToEdit('w')" class="text-[10px] text-amber-400 hover:underline">Edit AI</button>
+                            </div>
+                            <select id="white-controller-select" onchange="updateController('w', this.value)" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500">
+                                <option value="human">Human Player</option>
+                                <option value="bot">Custom White Bot</option>
+                            </select>
+                        </div>
+
+                        <!-- Black Controller -->
+                        <div class="bg-slate-900/90 p-2.5 rounded-lg border border-slate-800">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="text-xs font-bold text-cyan-300 flex items-center gap-1">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-slate-950 inline-block border border-cyan-400"></span> Black
+                                </span>
+                                <button onclick="switchMainTab('bots'); selectBotSideToEdit('b')" class="text-[10px] text-cyan-400 hover:underline">Edit AI</button>
+                            </div>
+                            <select id="black-controller-select" onchange="updateController('b', this.value)" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-500">
+                                <option value="human">Human Player</option>
+                                <option value="bot" selected>Custom Black Bot</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Match Action Bar -->
+                    <div class="grid grid-cols-3 gap-2 pt-1">
+                        <button onclick="undoLastMove()" class="btn-game py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-rotate-left text-amber-400"></i> Undo
+                        </button>
+                        <button onclick="toggleBotPause()" id="btn-pause-bots" class="btn-game py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-pause text-cyan-400" id="pause-icon"></i> <span id="pause-label">Pause AI</span>
+                        </button>
+                        <button onclick="triggerBotHint()" class="btn-game py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-wand-magic-sparkles text-purple-400"></i> AI Move
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quick Custom Shortcuts -->
+                <div class="grid grid-cols-3 gap-2">
+                    <button onclick="switchMainTab('editor')" class="glass-card p-2.5 rounded-xl text-left hover:bg-slate-800/60 group">
+                        <div class="text-amber-400 text-sm mb-0.5"><i class="fa-solid fa-chess-board"></i></div>
+                        <div class="text-xs font-bold text-white group-hover:text-amber-300">Edit Army</div>
+                        <div class="text-[10px] text-slate-400">Custom pieces & presets</div>
+                    </button>
+                    <button onclick="switchMainTab('models')" class="glass-card p-2.5 rounded-xl text-left hover:bg-slate-800/60 group">
+                        <div class="text-cyan-400 text-sm mb-0.5"><i class="fa-solid fa-cubes"></i></div>
+                        <div class="text-xs font-bold text-white group-hover:text-cyan-300">3D Forge</div>
+                        <div class="text-[10px] text-slate-400">Sculpt models & themes</div>
+                    </button>
+                    <button onclick="switchMainTab('bots')" class="glass-card p-2.5 rounded-xl text-left hover:bg-slate-800/60 group">
+                        <div class="text-purple-400 text-sm mb-0.5"><i class="fa-solid fa-brain"></i></div>
+                        <div class="text-xs font-bold text-white group-hover:text-purple-300">Bot Brain</div>
+                        <div class="text-[10px] text-slate-400">Tune AI behavior</div>
+                    </button>
+                </div>
+
+                <!-- Special Fairy Piece Guide -->
+                <div class="glass-card rounded-xl p-3 text-xs space-y-1.5">
+                    <div class="font-bold text-slate-200 flex items-center justify-between">
+                        <span><i class="fa-solid fa-dragon text-amber-400 mr-1.5"></i>Standard + Fairy Piece Rules</span>
+                        <span class="text-[10px] text-slate-400">Click piece on board to view moves</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-[11px] text-slate-300 pt-1">
+                        <div class="bg-slate-900/70 p-2 rounded-lg border border-slate-800">
+                            <span class="font-bold text-amber-300">Chancellor (C):</span> Combines <span class="text-white">Rook + Knight</span> movement.
+                        </div>
+                        <div class="bg-slate-900/70 p-2 rounded-lg border border-slate-800">
+                            <span class="font-bold text-cyan-300">Archbishop (A):</span> Combines <span class="text-white">Bishop + Knight</span> movement.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Move Log & History -->
+                <div class="glass-card rounded-xl p-3.5 flex flex-col h-56">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">
+                            <i class="fa-solid fa-list-ol text-amber-400 mr-1"></i> Battle Move Log
+                        </h3>
+                        <span id="move-count-badge" class="text-[11px] font-mono-code text-slate-400">Turn 1</span>
+                    </div>
+                    <div id="move-history-list" class="flex-1 overflow-y-auto bg-slate-950/70 rounded-lg p-2.5 border border-slate-800/80 font-mono-code text-xs space-y-1">
+                        <div class="text-slate-500 italic text-center py-8">Make a move on the 3D board to begin...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= TAB 2: STARTING BOARD & ARMY EDITOR ================= -->
+            <div id="panel-editor" class="hidden flex-1 overflow-y-auto p-4 space-y-4">
+                <div class="glass-card rounded-xl p-3.5 space-y-3 border-amber-500/30">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                                <i class="fa-solid fa-chess-board"></i> Starting Pieces Sandbox
+                            </h2>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Select a brush below, then click any square on the 3D board!</p>
+                        </div>
+                        <button onclick="saveCustomSetupAndPlay()" class="btn-game px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20">
+                            <i class="fa-solid fa-play mr-1"></i> Play Setup
+                        </button>
+                    </div>
+
+                    <!-- Army Color Toggle -->
+                    <div class="grid grid-cols-2 gap-2 pt-1">
+                        <button onclick="setEditorColor('w')" id="editor-color-w" class="btn-game py-2 rounded-lg text-xs font-bold bg-amber-500 text-slate-950 shadow">
+                            <i class="fa-solid fa-sun mr-1"></i> Paint White Pieces
+                        </button>
+                        <button onclick="setEditorColor('b')" id="editor-color-b" class="btn-game py-2 rounded-lg text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700">
+                            <i class="fa-solid fa-moon mr-1"></i> Paint Black Pieces
+                        </button>
+                    </div>
+
+                    <!-- Piece Palette Grid -->
+                    <div class="grid grid-cols-3 gap-2" id="editor-piece-grid">
+                        <!-- Dynamically populated by JS -->
+                    </div>
+
+                    <!-- Board Utility Actions -->
+                    <div class="grid grid-cols-3 gap-2 pt-1">
+                        <button onclick="mirrorWhiteToBlack()" class="btn-game py-1.5 px-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] font-semibold text-slate-200 border border-slate-700">
+                            <i class="fa-solid fa-clone text-cyan-400 mr-1"></i>Mirror W→B
+                        </button>
+                        <button onclick="clearBoardExceptKings()" class="btn-game py-1.5 px-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] font-semibold text-slate-200 border border-slate-700">
+                            <i class="fa-solid fa-broom text-amber-400 mr-1"></i>Kings Only
+                        </button>
+                        <button onclick="randomizeSymmetricArmy()" class="btn-game py-1.5 px-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] font-semibold text-slate-200 border border-slate-700">
+                            <i class="fa-solid fa-dice text-purple-400 mr-1"></i>Chaos Army
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Exciting Starting Army Presets -->
+                <div class="glass-card rounded-xl p-3.5 space-y-2.5">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                        <i class="fa-solid fa-bolt text-amber-400"></i> 1-Click Custom Army Presets
+                    </h3>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="loadBoardPreset('standard')" class="btn-game p-2.5 rounded-lg bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-left">
+                            <div class="text-xs font-bold text-white">Classic Standard</div>
+                            <div class="text-[10px] text-slate-400">Traditional 16v16 layout</div>
+                        </button>
+                        <button onclick="loadBoardPreset('chess960')" class="btn-game p-2.5 rounded-lg bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-left">
+                            <div class="text-xs font-bold text-amber-300">Chess960 Random</div>
+                            <div class="text-[10px] text-slate-400">Shuffled back-rank symmetry</div>
+                        </button>
+                        <button onclick="loadBoardPreset('fairy')" class="btn-game p-2.5 rounded-lg bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-left">
+                            <div class="text-xs font-bold text-cyan-300">Grand Fairy Emp.</div>
+                            <div class="text-[10px] text-slate-400">Chancellors & Archbishops</div>
+                        </button>
+                        <button onclick="loadBoardPreset('horde')" class="btn-game p-2.5 rounded-lg bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-left">
+                            <div class="text-xs font-bold text-emerald-300">Pawn Swarm vs Elite</div>
+                            <div class="text-[10px] text-slate-400">24 White Pawns vs Heavy Black</div>
+                        </button>
+                        <button onclick="loadBoardPreset('cavalry')" class="btn-game p-2.5 rounded-lg bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-left">
+                            <div class="text-xs font-bold text-purple-300">Royal Cavalry</div>
+                            <div class="text-[10px] text-slate-400">Knights, Archbishops & Queens</div>
+                        </button>
+                        <button onclick="loadBoardPreset('queens')" class="btn-game p-2.5 rounded-lg bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-left">
+                            <div class="text-xs font-bold text-rose-300">Matriarch Clash</div>
+                            <div class="text-[10px] text-slate-400">4 Queens & Chancellors per side</div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Turn & Castling Options -->
+                <div class="glass-card rounded-xl p-3.5 space-y-2.5">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Starting Turn</h3>
+                    <div class="flex items-center gap-3">
+                        <label class="flex items-center gap-2 text-xs cursor-pointer">
+                            <input type="radio" name="start-turn" value="w" checked onchange="setStartingTurn('w')" class="accent-amber-500">
+                            <span>White Moves First</span>
+                        </label>
+                        <label class="flex items-center gap-2 text-xs cursor-pointer">
+                            <input type="radio" name="start-turn" value="b" onchange="setStartingTurn('b')" class="accent-cyan-500">
+                            <span>Black Moves First</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= TAB 3: 3D PIECE MODEL STUDIO ================= -->
+            <div id="panel-models" class="hidden flex-1 overflow-y-auto p-4 space-y-4">
+                <!-- Global Model Theme Presets -->
+                <div class="glass-card rounded-xl p-3.5 space-y-2.5">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                            <i class="fa-solid fa-wand-sparkles"></i> 3D Model Style Presets
+                        </h2>
+                        <button onclick="randomizeAllPieceModels()" class="text-[11px] text-cyan-400 hover:underline font-semibold">
+                            <i class="fa-solid fa-shuffle mr-1"></i>Randomize Sculpt
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="applyGlobalModelTheme('staunton')" class="btn-game p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left">
+                            <div class="text-xs font-bold text-amber-200">Classic Staunton</div>
+                            <div class="text-[10px] text-slate-400">Turned marble & wood</div>
+                        </button>
+                        <button onclick="applyGlobalModelTheme('cyberpunk')" class="btn-game p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left">
+                            <div class="text-xs font-bold text-cyan-300">Cyberpunk Mecha</div>
+                            <div class="text-[10px] text-slate-400">Hovering neon & halos</div>
+                        </button>
+                        <button onclick="applyGlobalModelTheme('crystal')" class="btn-game p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left">
+                            <div class="text-xs font-bold text-emerald-300">Low-Poly Crystal</div>
+                            <div class="text-[10px] text-slate-400">Faceted gemstone monoliths</div>
+                        </button>
+                        <button onclick="applyGlobalModelTheme('gothic')" class="btn-game p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left">
+                            <div class="text-xs font-bold text-rose-300">Obsidian Citadel</div>
+                            <div class="text-[10px] text-slate-400">Spiked crowns & gold trim</div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Per-Piece 3D Geometry Sculptor -->
+                <div class="glass-card rounded-xl p-3.5 space-y-3 border-cyan-500/30">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-cyan-300 flex items-center gap-1.5">
+                            <i class="fa-solid fa-compass-drafting"></i> Per-Piece 3D Sculptor
+                        </h3>
+                        <span class="text-[10px] text-slate-400">Live updates 3D board</span>
+                    </div>
+
+                    <!-- Piece Selector Bar -->
+                    <div class="grid grid-cols-4 gap-1.5" id="model-piece-selector">
+                        <!-- Populated by JS -->
+                    </div>
+
+                    <!-- Geometry Controls for Selected Piece -->
+                    <div class="space-y-3 pt-1 bg-slate-900/75 p-3 rounded-xl border border-slate-800">
+                        <div class="grid grid-cols-2 gap-2.5">
+                            <div>
+                                <label class="text-[11px] text-slate-300 font-semibold block mb-1">Body Silhouette</label>
+                                <select id="model-body-select" onchange="updatePieceModelConfig('body', this.value)" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                                    <option value="lathe">Classic Turned Lathe</option>
+                                    <option value="crystal">Faceted Hex Crystal</option>
+                                    <option value="pillar">Fluted Battle Pillar</option>
+                                    <option value="mecha">Armored Mecha Core</option>
+                                    <option value="obelisk">Angular Obelisk</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-slate-300 font-semibold block mb-1">Crown / Head Topper</label>
+                                <select id="model-head-select" onchange="updatePieceModelConfig('head', this.value)" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                                    <option value="cross">Royal Cross</option>
+                                    <option value="crown">Spiked Coronet</option>
+                                    <option value="orb">Celestial Sphere</option>
+                                    <option value="knight">Steed Mane Crest</option>
+                                    <option value="mitre">Bishop Mitre</option>
+                                    <option value="turret">Castle Battlement</option>
+                                    <option value="horns">Twin Crescent Horns</option>
+                                    <option value="halo">Floating Plasma Halo</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <div class="flex justify-between text-[11px] mb-1">
+                                    <span class="text-slate-300">Height Scale</span>
+                                    <span id="val-model-height" class="font-mono-code text-amber-400">1.0x</span>
+                                </div>
+                                <input type="range" id="slider-model-height" min="0.6" max="1.6" step="0.05" value="1.0" oninput="updatePieceModelConfig('heightScale', parseFloat(this.value))">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-[11px] mb-1">
+                                    <span class="text-slate-300">Radius / Girth</span>
+                                    <span id="val-model-girth" class="font-mono-code text-amber-400">1.0x</span>
+                                </div>
+                                <input type="range" id="slider-model-girth" min="0.65" max="1.45" step="0.05" value="1.0" oninput="updatePieceModelConfig('girthScale', parseFloat(this.value))">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2.5 items-center pt-1">
+                            <div>
+                                <label class="text-[11px] text-slate-300 font-semibold block mb-1">Accent Energy Rings</label>
+                                <select id="model-rings-select" onchange="updatePieceModelConfig('rings', parseInt(this.value))" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                                    <option value="0">No Rings</option>
+                                    <option value="1">Single Collar Ring</option>
+                                    <option value="2">Double Royal Rings</option>
+                                    <option value="3">Orbital Floating Ring</option>
+                                </select>
+                            </div>
+                            <div class="pt-4">
+                                <label class="flex items-center gap-2 text-xs cursor-pointer bg-slate-800/90 px-3 py-1.5 rounded-lg border border-slate-700">
+                                    <input type="checkbox" id="check-model-float" onchange="updatePieceModelConfig('hover', this.checked)" class="accent-cyan-400">
+                                    <span>Levitate / Hover</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Army Material & Color Customizer -->
+                <div class="glass-card rounded-xl p-3.5 space-y-3">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                        <i class="fa-solid fa-palette text-amber-400"></i> Army Materials & Finishes
+                    </h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800 space-y-2">
+                            <div class="text-xs font-bold text-amber-200">White Army Finish</div>
+                            <div class="flex items-center justify-between text-[11px]">
+                                <span>Primary Color</span>
+                                <input type="color" id="color-white-primary" value="#f8fafc" onchange="updateMaterialColors()" class="w-7 h-6 rounded cursor-pointer bg-transparent border-0">
+                            </div>
+                            <div class="flex items-center justify-between text-[11px]">
+                                <span>Accent / Glow</span>
+                                <input type="color" id="color-white-accent" value="#f59e0b" onchange="updateMaterialColors()" class="w-7 h-6 rounded cursor-pointer bg-transparent border-0">
+                            </div>
+                        </div>
+                        <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800 space-y-2">
+                            <div class="text-xs font-bold text-cyan-300">Black Army Finish</div>
+                            <div class="flex items-center justify-between text-[11px]">
+                                <span>Primary Color</span>
+                                <input type="color" id="color-black-primary" value="#1e293b" onchange="updateMaterialColors()" class="w-7 h-6 rounded cursor-pointer bg-transparent border-0">
+                            </div>
+                            <div class="flex items-center justify-between text-[11px]">
+                                <span>Accent / Glow</span>
+                                <input type="color" id="color-black-accent" value="#06b6d4" onchange="updateMaterialColors()" class="w-7 h-6 rounded cursor-pointer bg-transparent border-0">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 pt-1">
+                        <div>
+                            <div class="flex justify-between text-[11px] mb-1">
+                                <span class="text-slate-300">Metallic Sheen</span>
+                                <span id="val-mat-metal" class="font-mono-code text-amber-400">0.35</span>
+                            </div>
+                            <input type="range" id="slider-mat-metal" min="0" max="0.95" step="0.05" value="0.35" oninput="updateMaterialColors()">
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-[11px] mb-1">
+                                <span class="text-slate-300">Surface Gloss</span>
+                                <span id="val-mat-rough" class="font-mono-code text-amber-400">0.25</span>
+                            </div>
+                            <input type="range" id="slider-mat-rough" min="0.05" max="0.95" step="0.05" value="0.25" oninput="updateMaterialColors()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= TAB 4: BOT AI LABORATORY ================= -->
+            <div id="panel-bots" class="hidden flex-1 overflow-y-auto p-4 space-y-4">
+                <!-- Select Which Side's Bot to Configure -->
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="selectBotSideToEdit('b')" id="bot-edit-tab-b" class="btn-game py-2 px-3 rounded-xl font-bold text-xs border border-cyan-500 bg-cyan-500/20 text-cyan-300 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-robot"></i> Configure Black Bot
+                    </button>
+                    <button onclick="selectBotSideToEdit('w')" id="bot-edit-tab-w" class="btn-game py-2 px-3 rounded-xl font-bold text-xs border border-slate-700 bg-slate-900 text-slate-400 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-robot"></i> Configure White Bot
+                    </button>
+                </div>
+
+                <!-- Bot Personality Presets -->
+                <div class="glass-card rounded-xl p-3.5 space-y-2.5">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-microchip"></i> AI Personality Archetypes
+                    </h3>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="applyBotPreset('grandmaster')" class="btn-game p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left">
+                            <div class="text-xs font-bold text-amber-300">Grandmaster Omni</div>
+                            <div class="text-[10px] text-slate-400">Deep, balanced calculation</div>
+                        </button>
+                        <button onclick="applyBotPreset('berserker')" class="btn-game p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left">
+                            <div class="text-xs font-bold text-rose-400">Valkyrie Berserker</div>
+                            <div class="text-[10px] text-slate-400">All-out King hunt & checks</div>
+                        </button>
+                        <button onclick="applyBotPreset('greed')" class="btn-game p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left">
+                            <div class="text-xs font-bold text-emerald-400">Goblin Collector</div>
+                            <div class="text-[10px] text-slate-400">Takes every piece in sight</div>
+                        </button>
+                        <button onclick="applyBotPreset('cavalry')" class="btn-game p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left">
+                            <div class="text-xs font-bold text-purple-400">Knight & Fairy Cult</div>
+                            <div class="text-[10px] text-slate-400">Obsessed with jumping pieces</div>
+                        </button>
+                        <button onclick="applyBotPreset('swarm')" class="btn-game p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left">
+                            <div class="text-xs font-bold text-cyan-300">Pawn Storm Engine</div>
+                            <div class="text-[10px] text-slate-400">Relentless pawn promotion</div>
+                        </button>
+                        <button onclick="applyBotPreset('chaos')" class="btn-game p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left">
+                            <div class="text-xs font-bold text-orange-400">Chaos Trickster</div>
+                            <div class="text-[10px] text-slate-400">Wild unpredictable gambits</div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Custom Heuristic Sliders -->
+                <div class="glass-card rounded-xl p-3.5 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs font-bold text-white">Bot Name:</label>
+                        <input type="text" id="bot-name-input" oninput="updateBotParam('name', this.value)" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-amber-300 font-bold w-48 focus:outline-none focus:border-amber-500">
+                    </div>
+
+                    <!-- Search Depth -->
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-slate-300 font-medium">Search Depth (Calculation Plies)</span>
+                            <span id="val-bot-depth" class="font-mono-code text-amber-400 font-bold">3 Plies</span>
+                        </div>
+                        <input type="range" id="slider-bot-depth" min="1" max="4" step="1" value="3" oninput="updateBotParam('depth', parseInt(this.value))">
+                    </div>
+
+                    <!-- Aggression / King Hunt -->
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-slate-300 font-medium">Aggression & King Attack</span>
+                            <span id="val-bot-aggression" class="font-mono-code text-rose-400 font-bold">100%</span>
+                        </div>
+                        <input type="range" id="slider-bot-aggression" min="0" max="250" step="10" value="100" oninput="updateBotParam('aggression', parseInt(this.value))">
+                    </div>
+
+                    <!-- Material Greed -->
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-slate-300 font-medium">Material Greed (Capture Priority)</span>
+                            <span id="val-bot-greed" class="font-mono-code text-emerald-400 font-bold">100%</span>
+                        </div>
+                        <input type="range" id="slider-bot-greed" min="40" max="250" step="10" value="100" oninput="updateBotParam('greed', parseInt(this.value))">
+                    </div>
+
+                    <!-- Center & Mobility -->
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-slate-300 font-medium">Center Control & Mobility</span>
+                            <span id="val-bot-positional" class="font-mono-code text-cyan-400 font-bold">100%</span>
+                        </div>
+                        <input type="range" id="slider-bot-positional" min="0" max="250" step="10" value="100" oninput="updateBotParam('positional', parseInt(this.value))">
+                    </div>
+
+                    <!-- Pawn Push -->
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-slate-300 font-medium">Pawn Push & Promotion Drive</span>
+                            <span id="val-bot-pawn" class="font-mono-code text-purple-400 font-bold">100%</span>
+                        </div>
+                        <input type="range" id="slider-bot-pawn" min="0" max="250" step="10" value="100" oninput="updateBotParam('pawnPush', parseInt(this.value))">
+                    </div>
+
+                    <!-- Randomness / Chaos -->
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-slate-300 font-medium">Chaos / Blunder Factor</span>
+                            <span id="val-bot-chaos" class="font-mono-code text-orange-400 font-bold">5%</span>
+                        </div>
+                        <input type="range" id="slider-bot-chaos" min="0" max="100" step="5" value="5" oninput="updateBotParam('chaos', parseInt(this.value))">
+                    </div>
+
+                    <!-- Favorite Piece Obsession -->
+                    <div class="flex items-center justify-between pt-1">
+                        <span class="text-xs text-slate-300 font-medium">Obsessed Piece (2x Value):</span>
+                        <select id="bot-fav-piece" onchange="updateBotParam('favoritePiece', this.value)" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-white">
+                            <option value="none">None (Balanced)</option>
+                            <option value="n">Knights (N)</option>
+                            <option value="q">Queens (Q)</option>
+                            <option value="b">Bishops (B)</option>
+                            <option value="r">Rooks (R)</option>
+                            <option value="p">Pawns (P)</option>
+                            <option value="c">Chancellors (C)</option>
+                            <option value="a">Archbishops (A)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Quick Bot vs Bot Arena Trigger -->
+                <button onclick="startBotVsBotSpectator()" class="btn-game w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-cyan-500 text-slate-950 font-extrabold text-xs shadow-lg">
+                    <i class="fa-solid fa-bolt mr-1"></i> Launch Bot vs. Bot Arena Match!
+                </button>
+            </div>
+        </aside>
+    </main>
+
+    <!-- Pawn Promotion Modal -->
+    <div id="promotion-modal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="glass-panel rounded-2xl p-5 max-w-md w-full border border-amber-500/40 shadow-2xl text-center space-y-4">
+            <h3 class="font-display font-bold text-lg text-amber-400">Promote Your Pawn</h3>
+            <p class="text-xs text-slate-300">Choose any standard or fairy piece to promote into:</p>
+            <div class="grid grid-cols-3 gap-2.5" id="promotion-options"></div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast-box" class="fixed bottom-5 right-5 z-50 pointer-events-none transition-all duration-300 opacity-0 translate-y-3">
+        <div class="glass-panel px-4 py-2.5 rounded-xl border border-amber-500/40 shadow-2xl flex items-center gap-2.5 text-xs font-semibold text-white">
+            <i class="fa-solid fa-circle-info text-amber-400"></i>
+            <span id="toast-message">Notification</span>
+        </div>
+    </div>
+
+    <script>
+        let soundEnabled = true;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) audioCtx = new AudioContextClass();
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            try {
+                initAudio();
+                if (!audioCtx) return;
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'move') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.exponentialRampToValueAtTime(110, now + 0.08);
+                    gain.gain.setValueAtTime(0.18, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } else if (type === 'capture') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(160, now);
+                    osc.frequency.exponentialRampToValueAtTime(55, now + 0.14);
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+                    osc.start(now);
+                    osc.stop(now + 0.14);
+                } else if (type === 'check') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(587.33, now);
+                    osc.frequency.setValueAtTime(880, now + 0.08);
+                    gain.gain.setValueAtTime(0.22, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+                    osc.start(now);
+                    osc.stop(now + 0.28);
+                } else if (type === 'victory') {
+                    const notes = [523.25, 659.25, 783.99, 1046.50];
+                    notes.forEach((freq, idx) => {
+                        const o = audioCtx.createOscillator();
+                        const g = audioCtx.createGain();
+                        o.type = 'triangle';
+                        o.connect(g);
+                        g.connect(audioCtx.destination);
+                        o.frequency.setValueAtTime(freq, now + idx * 0.09);
+                        g.gain.setValueAtTime(0.18, now + idx * 0.09);
+                        g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.09 + 0.25);
+                        o.start(now + idx * 0.09);
+                        o.stop(now + idx * 0.09 + 0.25);
+                    });
+                } else if (type === 'paint') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(420, now);
+                    osc.frequency.exponentialRampToValueAtTime(640, now + 0.05);
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                    osc.start(now);
+                    osc.stop(now + 0.05);
+                }
+            } catch (e) {
+                // Ignore audio context restrictions
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('sound-icon');
+            const btn = document.getElementById('sound-btn');
+            if (soundEnabled) {
+                icon.className = 'fa-solid fa-volume-high';
+                btn.classList.add('text-amber-400');
+                showToast('Sound effects enabled');
+            } else {
+                icon.className = 'fa-solid fa-volume-xmark';
+                btn.classList.remove('text-amber-400');
+                showToast('Sound effects muted');
+            }
+        }
+
+        function showToast(msg) {
+            const box = document.getElementById('toast-box');
+            document.getElementById('toast-message').textContent = msg;
+            box.classList.remove('opacity-0', 'translate-y-3');
+            clearTimeout(window._toastTimer);
+            window._toastTimer = setTimeout(() => {
+                box.classList.add('opacity-0', 'translate-y-3');
+            }, 2400);
+        }
+
+        const PIECE_TYPES = {
+            k: { name: 'King', symbol: 'K', icon: 'fa-chess-king', baseValue: 20000 },
+            q: { name: 'Queen', symbol: 'Q', icon: 'fa-chess-queen', baseValue: 920 },
+            c: { name: 'Chancellor', symbol: 'C', icon: 'fa-chess-rook', baseValue: 860, badge: 'R+N' },
+            a: { name: 'Archbishop', symbol: 'A', icon: 'fa-chess-bishop', baseValue: 820, badge: 'B+N' },
+            r: { name: 'Rook', symbol: 'R', icon: 'fa-chess-rook', baseValue: 500 },
+            b: { name: 'Bishop', symbol: 'B', icon: 'fa-chess-bishop', baseValue: 330 },
+            n: { name: 'Knight', symbol: 'N', icon: 'fa-chess-knight', baseValue: 310 },
+            p: { name: 'Pawn', symbol: 'P', icon: 'fa-chess-pawn', baseValue: 100 }
+        };
+
+        // Customizable 3D Model Configurations for every piece type
+        let pieceModelConfigs = {
+            k: { body: 'lathe', head: 'cross', heightScale: 1.25, girthScale: 1.1, rings: 2, hover: false },
+            q: { body: 'lathe', head: 'crown', heightScale: 1.15, girthScale: 1.05, rings: 2, hover: false },
+            c: { body: 'mecha', head: 'horns', heightScale: 1.1, girthScale: 1.08, rings: 3, hover: true },
+            a: { body: 'crystal', head: 'halo', heightScale: 1.08, girthScale: 1.0, rings: 3, hover: true },
+            r: { body: 'pillar', head: 'turret', heightScale: 0.95, girthScale: 1.08, rings: 1, hover: false },
+            b: { body: 'lathe', head: 'mitre', heightScale: 1.0, girthScale: 0.95, rings: 1, hover: false },
+            n: { body: 'obelisk', head: 'knight', heightScale: 0.98, girthScale: 1.0, rings: 1, hover: false },
+            p: { body: 'lathe', head: 'orb', heightScale: 0.78, girthScale: 0.88, rings: 0, hover: false }
+        };
+
+        let selectedModelPiece = 'k';
+
+        // Customizable Army Material Settings
+        let armyMaterialSettings = {
+            wPrimary: '#f8fafc',
+            wAccent: '#f59e0b',
+            bPrimary: '#1e293b',
+            bAccent: '#06b6d4',
+            metalness: 0.35,
+            roughness: 0.25
+        };
+
+        // Customizable Bot Configurations for White and Black
+        let botConfigs = {
+            w: {
+                name: 'Chronos White AI',
+                depth: 3,
+                aggression: 110,
+                greed: 100,
+                positional: 110,
+                pawnPush: 100,
+                chaos: 5,
+                favoritePiece: 'none'
+            },
+            b: {
+                name: 'Nemesis Black AI',
+                depth: 3,
+                aggression: 120,
+                greed: 105,
+                positional: 100,
+                pawnPush: 110,
+                chaos: 5,
+                favoritePiece: 'none'
+            }
+        };
+
+        let activeBotEditSide = 'b';
+
+        let customStartingBoard = [];
+        let customStartingTurn = 'w';
+
+        let board = [];
+        let turn = 'w';
+        let controllers = { w: 'human', b: 'bot' };
+        let selectedSquare = null;
+        let legalMovesForSelected = [];
+        let moveHistory = [];
+        let stateSnapshots = [];
+        let enPassantTarget = null; // { r, c }
+        let gameOver = false;
+        let botsPaused = false;
+        let botThinking = false;
+        let botTimer = null;
+        let lastMove = null; // { from: {r,c}, to: {r,c} }
+        let currentMainTab = 'play';
+
+        // Editor state
+        let editorBrushColor = 'w';
+        let editorBrushType = 'q'; // 'k','q','c','a','r','b','n','p','erase'
+
+        function createStandardBoardGrid() {
+            const grid = Array(8).fill(null).map(() => Array(8).fill(null));
+            const backRank = ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'];
+            for (let c = 0; c < 8; c++) {
+                grid[0][c] = { type: backRank[c], color: 'b', moved: false };
+                grid[1][c] = { type: 'p', color: 'b', moved: false };
+                grid[6][c] = { type: 'p', color: 'w', moved: false };
+                grid[7][c] = { type: backRank[c], color: 'w', moved: false };
+            }
+            return grid;
+        }
+
+        function cloneBoardGrid(src) {
+            return src.map(row => row.map(cell => cell ? { ...cell } : null));
+        }
+
+        customStartingBoard = createStandardBoardGrid();
+
+        function inBounds(r, c) {
+            return r >= 0 && r < 8 && c >= 0 && c < 8;
+        }
+
+        // Generate pseudo-legal moves for a piece at (r, c) on a given board state
+        function getPseudoMovesForSquare(bState, r, c, epTarget, includeCastling = true) {
+            const piece = bState[r][c];
+            if (!piece) return [];
+            const moves = [];
+            const color = piece.color;
+            const enemy = color === 'w' ? 'b' : 'w';
+            const type = piece.type;
+
+            const addStepMove = (tr, tc) => {
+                if (!inBounds(tr, tc)) return;
+                const target = bState[tr][tc];
+                if (!target || target.color === enemy) {
+                    moves.push({ fromR: r, fromC: c, toR: tr, toC: tc, capture: !!target });
+                }
+            };
+
+            const addSlideMoves = (dirs) => {
+                for (const [dr, dc] of dirs) {
+                    let tr = r + dr;
+                    let tc = c + dc;
+                    while (inBounds(tr, tc)) {
+                        const target = bState[tr][tc];
+                        if (!target) {
+                            moves.push({ fromR: r, fromC: c, toR: tr, toC: tc, capture: false });
+                        } else {
+                            if (target.color === enemy) {
+                                moves.push({ fromR: r, fromC: c, toR: tr, toC: tc, capture: true });
+                            }
+                            break;
+                        }
+                        tr += dr;
+                        tc += dc;
+                    }
+                }
+            };
+
+            const rookDirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+            const bishopDirs = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+            const knightSteps = [
+                [-2, -1], [-2, 1], [-1, -2], [-1, 2],
+                [1, -2], [1, 2], [2, -1], [2, 1]
+            ];
+            const kingSteps = [...rookDirs, ...bishopDirs];
+
+            if (type === 'p') {
+                const dir = color === 'w' ? -1 : 1;
+                const startRow = color === 'w' ? 6 : 1;
+                const promoRow = color === 'w' ? 0 : 7;
+
+                // 1 step forward
+                const nr = r + dir;
+                if (inBounds(nr, c) && !bState[nr][c]) {
+                    moves.push({
+                        fromR: r, fromC: c, toR: nr, toC: c,
+                        capture: false, promotion: nr === promoRow
+                    });
+                    // 2 steps forward (from starting rank or unrestricted first pawn move if on back 2 ranks)
+                    const nr2 = r + dir * 2;
+                    const canDouble = (color === 'w' && r >= 5) || (color === 'b' && r <= 2) || r === startRow;
+                    if (!piece.moved && canDouble && inBounds(nr2, c) && !bState[nr2][c] && nr !== promoRow) {
+                        moves.push({
+                            fromR: r, fromC: c, toR: nr2, toC: c,
+                            capture: false, doublePawn: true
+                        });
+                    }
+                }
+
+                // Captures
+                for (const dc of [-1, 1]) {
+                    const tc = c + dc;
+                    if (inBounds(nr, tc)) {
+                        const target = bState[nr][tc];
+                        if (target && target.color === enemy) {
+                            moves.push({
+                                fromR: r, fromC: c, toR: nr, toC: tc,
+                                capture: true, promotion: nr === promoRow
+                            });
+                        } else if (epTarget && epTarget.r === nr && epTarget.c === tc) {
+                            moves.push({
+                                fromR: r, fromC: c, toR: nr, toC: tc,
+                                capture: true, enPassant: true
+                            });
+                        }
+                    }
+                }
+            } else if (type === 'n') {
+                for (const [dr, dc] of knightSteps) addStepMove(r + dr, c + dc);
+            } else if (type === 'b') {
+                addSlideMoves(bishopDirs);
+            } else if (type === 'r') {
+                addSlideMoves(rookDirs);
+            } else if (type === 'q') {
+                addSlideMoves([...rookDirs, ...bishopDirs]);
+            } else if (type === 'c') {
+                // Chancellor = Rook + Knight
+                addSlideMoves(rookDirs);
+                for (const [dr, dc] of knightSteps) addStepMove(r + dr, c + dc);
+            } else if (type === 'a') {
+                // Archbishop = Bishop + Knight
+                addSlideMoves(bishopDirs);
+                for (const [dr, dc] of knightSteps) addStepMove(r + dr, c + dc);
+            } else if (type === 'k') {
+                for (const [dr, dc] of kingSteps) addStepMove(r + dr, c + dc);
+
+                // Castling support if King hasn't moved and is on home rank
+                const homeRow = color === 'w' ? 7 : 0;
+                if (includeCastling && !piece.moved && r === homeRow && c === 4 && !isKingInCheck(bState, color)) {
+                    // Kingside castle
+                    const kr = bState[homeRow][7];
+                    if (kr && kr.type === 'r' && kr.color === color && !kr.moved) {
+                        if (!bState[homeRow][5] && !bState[homeRow][6]) {
+                            if (!isSquareAttacked(bState, homeRow, 5, enemy) && !isSquareAttacked(bState, homeRow, 6, enemy)) {
+                                moves.push({ fromR: r, fromC: c, toR: homeRow, toC: 6, castle: 'K' });
+                            }
+                        }
+                    }
+                    // Queenside castle
+                    const qr = bState[homeRow][0];
+                    if (qr && qr.type === 'r' && qr.color === color && !qr.moved) {
+                        if (!bState[homeRow][1] && !bState[homeRow][2] && !bState[homeRow][3]) {
+                            if (!isSquareAttacked(bState, homeRow, 3, enemy) && !isSquareAttacked(bState, homeRow, 2, enemy)) {
+                                moves.push({ fromR: r, fromC: c, toR: homeRow, toC: 2, castle: 'Q' });
+                            }
+                        }
+                    }
+                }
+            }
+            return moves;
+        }
+
+        function isSquareAttacked(bState, targetR, targetC, attackerColor) {
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const p = bState[r][c];
+                    if (p && p.color === attackerColor) {
+                        if (p.type === 'p') {
+                            const dir = attackerColor === 'w' ? -1 : 1;
+                            if (r + dir === targetR && Math.abs(c - targetC) === 1) return true;
+                        } else {
+                            const pseudo = getPseudoMovesForSquare(bState, r, c, null, false);
+                            for (const m of pseudo) {
+                                if (m.toR === targetR && m.toC === targetC) return true;
+                            }
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        function findKingSquare(bState, color) {
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const p = bState[r][c];
+                    if (p && p.color === color && p.type === 'k') return { r, c };
+                }
+            }
+            return null;
+        }
+
+        function isKingInCheck(bState, color) {
+            const kingPos = findKingSquare(bState, color);
+            if (!kingPos) return false;
+            const enemy = color === 'w' ? 'b' : 'w';
+            return isSquareAttacked(bState, kingPos.r, kingPos.c, enemy);
+        }
+
+        function applyMoveOnClone(bState, move) {
+            const next = cloneBoardGrid(bState);
+            const moving = { ...next[move.fromR][move.fromC], moved: true };
+            next[move.fromR][move.fromC] = null;
+
+            if (move.enPassant) {
+                next[move.fromR][move.toC] = null;
+            }
+            if (move.castle === 'K') {
+                const rook = next[move.fromR][7];
+                next[move.fromR][7] = null;
+                if (rook) next[move.fromR][5] = { ...rook, moved: true };
+            } else if (move.castle === 'Q') {
+                const rook = next[move.fromR][0];
+                next[move.fromR][0] = null;
+                if (rook) next[move.fromR][3] = { ...rook, moved: true };
+            }
+            if (move.promotion) {
+                moving.type = move.promoteTo || 'q';
+            }
+            next[move.toR][move.toC] = moving;
+            return next;
+        }
+
+        function getAllLegalMoves(bState, color, epTarget) {
+            const legal = [];
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const p = bState[r][c];
+                    if (p && p.color === color) {
+                        const pseudo = getPseudoMovesForSquare(bState, r, c, epTarget, true);
+                        for (const m of pseudo) {
+                            const nextB = applyMoveOnClone(bState, m);
+                            if (!isKingInCheck(nextB, color)) {
+                                legal.push(m);
+                            }
+                        }
+                    }
+                }
+            }
+            return legal;
+        }
+
+        let scene, camera, renderer, raycaster, mouse;
+        let boardGroup, piecesGroup, highlightsGroup;
+        let tileMeshes = []; // 8x8
+        let pieceMeshes = []; // list of { mesh, r, c, type, color, baseHeight, hover }
+
+        // Camera spherical orbit state
+        let camTheta = 0; // 0 = White side front, Math.PI = Black side front
+        let camPhi = 0.88; // angle from vertical
+        let camRadius = 13.8;
+        let targetCamTheta = 0;
+        let targetCamPhi = 0.88;
+        let targetCamRadius = 13.8;
+        let isDraggingCamera = false;
+        let prevMouse = { x: 0, y: 0 };
+
+        function initThreeScene() {
+            const container = document.getElementById('canvas-container');
+            scene = new THREE.Scene();
+
+            camera = new THREE.PerspectiveCamera(42, container.clientWidth / container.clientHeight, 0.1, 100);
+            updateCameraPosition(true);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            container.appendChild(renderer.domElement);
+
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+
+            // Studio Lighting
+            const ambient = new THREE.AmbientLight(0xffffff, 0.65);
+            scene.add(ambient);
+
+            const dirLight = new THREE.DirectionalLight(0xfffbeb, 0.95);
+            dirLight.position.set(7, 14, 8);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 2048;
+            dirLight.shadow.mapSize.height = 2048;
+            dirLight.shadow.camera.near = 2;
+            dirLight.shadow.camera.far = 32;
+            const d = 6.5;
+            dirLight.shadow.camera.left = -d;
+            dirLight.shadow.camera.right = d;
+            dirLight.shadow.camera.top = d;
+            dirLight.shadow.camera.bottom = -d;
+            scene.add(dirLight);
+
+            const rimLight = new THREE.DirectionalLight(0x38bdf8, 0.45);
+            rimLight.position.set(-9, 8, -8);
+            scene.add(rimLight);
+
+            const warmPoint = new THREE.PointLight(0xf59e0b, 0.4, 22);
+            warmPoint.position.set(0, 6, 0);
+            scene.add(warmPoint);
+
+            boardGroup = new THREE.Group();
+            piecesGroup = new THREE.Group();
+            highlightsGroup = new THREE.Group();
+            scene.add(boardGroup);
+            scene.add(piecesGroup);
+            scene.add(highlightsGroup);
+
+            build3DBoardBase();
+            rebuildAll3DPieces();
+            setupCanvasEvents(renderer.domElement);
+
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        function boardCoordToWorld(r, c) {
+            return {
+                x: (c - 3.5) * 1.15,
+                z: (r - 3.5) * 1.15
+            };
+        }
+
+        function build3DBoardBase() {
+            while (boardGroup.children.length) boardGroup.remove(boardGroup.children[0]);
+            tileMeshes = Array(8).fill(null).map(() => Array(8).fill(null));
+
+            // Outer Frame
+            const frameGeo = new THREE.BoxGeometry(10.2, 0.42, 10.2);
+            const frameMat = new THREE.MeshStandardMaterial({
+                color: 0x0f172a,
+                roughness: 0.4,
+                metalness: 0.5
+            });
+            const frame = new THREE.Mesh(frameGeo, frameMat);
+            frame.position.y = -0.24;
+            frame.receiveShadow = true;
+            boardGroup.add(frame);
+
+            // Gold Border Trim
+            const trimGeo = new THREE.BoxGeometry(9.5, 0.45, 9.5);
+            const trimMat = new THREE.MeshStandardMaterial({
+                color: 0xb45309,
+                roughness: 0.3,
+                metalness: 0.75
+            });
+            const trim = new THREE.Mesh(trimGeo, trimMat);
+            trim.position.y = -0.23;
+            boardGroup.add(trim);
+
+            const lightTileMat = new THREE.MeshStandardMaterial({
+                color: 0xe2e8f0,
+                roughness: 0.35,
+                metalness: 0.1
+            });
+            const darkTileMat = new THREE.MeshStandardMaterial({
+                color: 0x334155,
+                roughness: 0.45,
+                metalness: 0.2
+            });
+
+            const tileGeo = new THREE.BoxGeometry(1.13, 0.16, 1.13);
+
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const isLight = (r + c) % 2 === 0;
+                    const tile = new THREE.Mesh(tileGeo, isLight ? lightTileMat.clone() : darkTileMat.clone());
+                    const pos = boardCoordToWorld(r, c);
+                    tile.position.set(pos.x, -0.08, pos.z);
+                    tile.receiveShadow = true;
+                    tile.userData = { isTile: true, r, c, isLight };
+                    boardGroup.add(tile);
+                    tileMeshes[r][c] = tile;
+                }
+            }
+        }
+
+        function createProceduralPieceMesh(type, color) {
+            const cfg = pieceModelConfigs[type] || pieceModelConfigs.p;
+            const group = new THREE.Group();
+
+            const isWhite = color === 'w';
+            const primaryHex = isWhite ? armyMaterialSettings.wPrimary : armyMaterialSettings.bPrimary;
+            const accentHex = isWhite ? armyMaterialSettings.wAccent : armyMaterialSettings.bAccent;
+
+            const mainMat = new THREE.MeshStandardMaterial({
+                color: new THREE.Color(primaryHex),
+                metalness: armyMaterialSettings.metalness,
+                roughness: armyMaterialSettings.roughness
+            });
+
+            const accentMat = new THREE.MeshStandardMaterial({
+                color: new THREE.Color(accentHex),
+                metalness: 0.7,
+                roughness: 0.2,
+                emissive: new THREE.Color(accentHex),
+                emissiveIntensity: 0.22
+            });
+
+            const hScale = cfg.heightScale || 1.0;
+            const gScale = cfg.girthScale || 1.0;
+
+            // 1. Pedestal Base
+            const baseGeo = new THREE.CylinderGeometry(0.38 * gScale, 0.44 * gScale, 0.14, 24);
+            const baseMesh = new THREE.Mesh(baseGeo, mainMat);
+            baseMesh.position.y = 0.07;
+            baseMesh.castShadow = true;
+            baseMesh.receiveShadow = true;
+            group.add(baseMesh);
+
+            const baseRimGeo = new THREE.TorusGeometry(0.41 * gScale, 0.03, 12, 28);
+            const baseRim = new THREE.Mesh(baseRimGeo, accentMat);
+            baseRim.rotation.x = Math.PI / 2;
+            baseRim.position.y = 0.06;
+            group.add(baseRim);
+
+            // 2. Body Geometry based on cfg.body
+            const bodyHeight = 0.82 * hScale;
+            let bodyMesh;
+
+            if (cfg.body === 'lathe') {
+                const points = [
+                    new THREE.Vector2(0.35 * gScale, 0.14),
+                    new THREE.Vector2(0.28 * gScale, 0.14 + bodyHeight * 0.2),
+                    new THREE.Vector2(0.18 * gScale, 0.14 + bodyHeight * 0.55),
+                    new THREE.Vector2(0.24 * gScale, 0.14 + bodyHeight * 0.85),
+                    new THREE.Vector2(0.20 * gScale, 0.14 + bodyHeight)
+                ];
+                const latheGeo = new THREE.LatheGeometry(points, 24);
+                bodyMesh = new THREE.Mesh(latheGeo, mainMat);
+            } else if (cfg.body === 'crystal') {
+                const crysGeo = new THREE.CylinderGeometry(0.19 * gScale, 0.36 * gScale, bodyHeight, 6);
+                const flatMat = mainMat.clone();
+                flatMat.flatShading = true;
+                bodyMesh = new THREE.Mesh(crysGeo, flatMat);
+                bodyMesh.position.y = 0.14 + bodyHeight / 2;
+            } else if (cfg.body === 'pillar') {
+                const pilGeo = new THREE.CylinderGeometry(0.27 * gScale, 0.33 * gScale, bodyHeight, 10);
+                bodyMesh = new THREE.Mesh(pilGeo, mainMat);
+                bodyMesh.position.y = 0.14 + bodyHeight / 2;
+            } else if (cfg.body === 'mecha') {
+                bodyMesh = new THREE.Group();
+                const lower = new THREE.Mesh(new THREE.BoxGeometry(0.46 * gScale, bodyHeight * 0.5, 0.46 * gScale), mainMat);
+                lower.position.y = 0.14 + bodyHeight * 0.25;
+                const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.22 * gScale), accentMat);
+                core.position.y = 0.14 + bodyHeight * 0.58;
+                const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.26 * gScale, 0.16 * gScale, bodyHeight * 0.38, 8), mainMat);
+                upper.position.y = 0.14 + bodyHeight * 0.82;
+                bodyMesh.add(lower, core, upper);
+            } else {
+                // obelisk
+                const obGeo = new THREE.ConeGeometry(0.35 * gScale, bodyHeight * 1.05, 4);
+                bodyMesh = new THREE.Mesh(obGeo, mainMat);
+                bodyMesh.position.y = 0.14 + bodyHeight / 2;
+                bodyMesh.rotation.y = Math.PI / 4;
+            }
+
+            bodyMesh.castShadow = true;
+            bodyMesh.receiveShadow = true;
+            group.add(bodyMesh);
+
+            const topY = 0.14 + bodyHeight;
+
+            // 3. Accent Rings
+            if (cfg.rings >= 1) {
+                const r1 = new THREE.Mesh(new THREE.TorusGeometry(0.25 * gScale, 0.032, 12, 24), accentMat);
+                r1.rotation.x = Math.PI / 2;
+                r1.position.y = topY - 0.05;
+                group.add(r1);
+            }
+            if (cfg.rings >= 2) {
+                const r2 = new THREE.Mesh(new THREE.TorusGeometry(0.29 * gScale, 0.025, 12, 24), accentMat);
+                r2.rotation.x = Math.PI / 2;
+                r2.position.y = 0.14 + bodyHeight * 0.35;
+                group.add(r2);
+            }
+            if (cfg.rings >= 3) {
+                const r3 = new THREE.Mesh(new THREE.TorusGeometry(0.36 * gScale, 0.022, 12, 28), accentMat);
+                r3.rotation.x = Math.PI / 3;
+                r3.position.y = 0.14 + bodyHeight * 0.65;
+                r3.userData.spinRing = true;
+                group.add(r3);
+            }
+
+            // 4. Head / Topper Attachment based on cfg.head
+            const headGroup = new THREE.Group();
+            headGroup.position.y = topY;
+
+            if (cfg.head === 'cross') {
+                const collar = new THREE.Mesh(new THREE.SphereGeometry(0.2 * gScale, 16, 16), mainMat);
+                collar.position.y = 0.1;
+                const vBar = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.34, 0.08), accentMat);
+                vBar.position.y = 0.34;
+                const hBar = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.08, 0.08), accentMat);
+                hBar.position.y = 0.38;
+                headGroup.add(collar, vBar, hBar);
+            } else if (cfg.head === 'crown') {
+                const dome = new THREE.Mesh(new THREE.SphereGeometry(0.19 * gScale, 16, 16), accentMat);
+                dome.position.y = 0.12;
+                headGroup.add(dome);
+                for (let i = 0; i < 6; i++) {
+                    const ang = (i / 6) * Math.PI * 2;
+                    const spike = new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.24, 8), mainMat);
+                    spike.position.set(Math.cos(ang) * 0.17 * gScale, 0.2, Math.sin(ang) * 0.17 * gScale);
+                    headGroup.add(spike);
+                }
+            } else if (cfg.head === 'orb') {
+                const orb = new THREE.Mesh(new THREE.SphereGeometry(0.21 * gScale, 20, 20), mainMat);
+                orb.position.y = 0.16;
+                headGroup.add(orb);
+            } else if (cfg.head === 'knight') {
+                // Sculpted Knight Head & Mane
+                const neck = new THREE.Mesh(new THREE.BoxGeometry(0.22 * gScale, 0.34, 0.28 * gScale), mainMat);
+                neck.position.set(0, 0.15, 0);
+                neck.rotation.x = -0.25;
+                const snout = new THREE.Mesh(new THREE.ConeGeometry(0.15 * gScale, 0.34, 4), mainMat);
+                snout.rotation.x = Math.PI / 2 + 0.3;
+                snout.rotation.y = Math.PI / 4;
+                snout.position.set(0, 0.26, (isWhite ? -0.16 : 0.16));
+                const mane = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.36, 0.12), accentMat);
+                mane.position.set(0, 0.2, (isWhite ? 0.12 : -0.12));
+                headGroup.add(neck, snout, mane);
+            } else if (cfg.head === 'mitre') {
+                const mitre = new THREE.Mesh(new THREE.SphereGeometry(0.21 * gScale, 16, 16), mainMat);
+                mitre.scale.set(0.85, 1.45, 0.85);
+                mitre.position.y = 0.18;
+                const tip = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 12), accentMat);
+                tip.position.y = 0.44;
+                headGroup.add(mitre, tip);
+            } else if (cfg.head === 'turret') {
+                const cyl = new THREE.Mesh(new THREE.CylinderGeometry(0.28 * gScale, 0.24 * gScale, 0.22, 16), mainMat);
+                cyl.position.y = 0.1;
+                headGroup.add(cyl);
+                for (let i = 0; i < 4; i++) {
+                    const ang = (i / 4) * Math.PI * 2 + Math.PI / 4;
+                    const merlon = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.12, 0.11), accentMat);
+                    merlon.position.set(Math.cos(ang) * 0.2 * gScale, 0.24, Math.sin(ang) * 0.2 * gScale);
+                    headGroup.add(merlon);
+                }
+            } else if (cfg.head === 'horns') {
+                const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.17 * gScale), accentMat);
+                core.position.y = 0.18;
+                const hornL = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.35, 8), mainMat);
+                hornL.position.set(-0.18 * gScale, 0.28, 0);
+                hornL.rotation.z = 0.35;
+                const hornR = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.35, 8), mainMat);
+                hornR.position.set(0.18 * gScale, 0.28, 0);
+                hornR.rotation.z = -0.35;
+                headGroup.add(core, hornL, hornR);
+            } else if (cfg.head === 'halo') {
+                const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.18 * gScale), mainMat);
+                gem.position.y = 0.22;
+                const halo = new THREE.Mesh(new THREE.TorusGeometry(0.28 * gScale, 0.03, 12, 28), accentMat);
+                halo.position.y = 0.26;
+                halo.userData.spinRing = true;
+                headGroup.add(gem, halo);
+            }
+
+            group.add(headGroup);
+            return group;
+        }
+
+        function rebuildAll3DPieces() {
+            if (!piecesGroup) return;
+            while (piecesGroup.children.length) piecesGroup.remove(piecesGroup.children[0]);
+            pieceMeshes = [];
+
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const p = board[r][c];
+                    if (p) {
+                        const mesh = createProceduralPieceMesh(p.type, p.color);
+                        const pos = boardCoordToWorld(r, c);
+                        const cfg = pieceModelConfigs[p.type] || pieceModelConfigs.p;
+                        const baseY = cfg.hover ? 0.16 : 0;
+                        mesh.position.set(pos.x, baseY, pos.z);
+                        mesh.userData = { isPiece: true, r, c, type: p.type, color: p.color };
+
+                        piecesGroup.add(mesh);
+                        pieceMeshes.push({
+                            mesh,
+                            r,
+                            c,
+                            type: p.type,
+                            color: p.color,
+                            hover: cfg.hover,
+                            phase: (r * 8 + c) * 0.7
+                        });
+                    }
+                }
+            }
+            renderBoardHighlights();
+        }
+
+        function renderBoardHighlights() {
+            if (!highlightsGroup) return;
+            while (highlightsGroup.children.length) highlightsGroup.remove(highlightsGroup.children[0]);
+
+            // Reset tile emissive colors
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const tile = tileMeshes[r][c];
+                    if (tile) {
+                        tile.material.emissive = new THREE.Color(0x000000);
+                        tile.material.emissiveIntensity = 0;
+                    }
+                }
+            }
+
+            // Last Move Highlight
+            if (lastMove && currentMainTab !== 'editor') {
+                [lastMove.from, lastMove.to].forEach(sq => {
+                    if (sq && tileMeshes[sq.r] && tileMeshes[sq.r][sq.c]) {
+                        tileMeshes[sq.r][sq.c].material.emissive = new THREE.Color(0xd97706);
+                        tileMeshes[sq.r][sq.c].material.emissiveIntensity = 0.28;
+                    }
+                });
+            }
+
+            // Selected Square Highlight
+            if (selectedSquare && tileMeshes[selectedSquare.r][selectedSquare.c]) {
+                tileMeshes[selectedSquare.r][selectedSquare.c].material.emissive = new THREE.Color(0xf59e0b);
+                tileMeshes[selectedSquare.r][selectedSquare.c].material.emissiveIntensity = 0.55;
+            }
+
+            // Check Danger Highlight
+            ['w', 'b'].forEach(col => {
+                if (isKingInCheck(board, col)) {
+                    const kSq = findKingSquare(board, col);
+                    if (kSq && tileMeshes[kSq.r][kSq.c]) {
+                        tileMeshes[kSq.r][kSq.c].material.emissive = new THREE.Color(0xef4444);
+                        tileMeshes[kSq.r][kSq.c].material.emissiveIntensity = 0.75;
+                    }
+                }
+            });
+
+            // Legal Move Indicators
+            for (const m of legalMovesForSelected) {
+                const pos = boardCoordToWorld(m.toR, m.toC);
+                if (m.capture) {
+                    const ringGeo = new THREE.TorusGeometry(0.45, 0.055, 12, 28);
+                    const ringMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+                    const ring = new THREE.Mesh(ringGeo, ringMat);
+                    ring.rotation.x = Math.PI / 2;
+                    ring.position.set(pos.x, 0.05, pos.z);
+                    highlightsGroup.add(ring);
+                } else {
+                    const dotGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.06, 20);
+                    const dotMat = new THREE.MeshBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.85 });
+                    const dot = new THREE.Mesh(dotGeo, dotMat);
+                    dot.position.set(pos.x, 0.03, pos.z);
+                    highlightsGroup.add(dot);
+                }
+            }
+        }
+
+        function setupCanvasEvents(domElement) {
+            let pointerDownPos = { x: 0, y: 0 };
+
+            domElement.addEventListener('contextmenu', e => e.preventDefault());
+
+            domElement.addEventListener('pointerdown', e => {
+                pointerDownPos = { x: e.clientX, y: e.clientY };
+                if (e.button === 2 || e.shiftKey) {
+                    isDraggingCamera = true;
+                    prevMouse = { x: e.clientX, y: e.clientY };
+                }
+            });
+
+            window.addEventListener('pointermove', e => {
+                if (isDraggingCamera) {
+                    const dx = e.clientX - prevMouse.x;
+                    const dy = e.clientY - prevMouse.y;
+                    prevMouse = { x: e.clientX, y: e.clientY };
+                    targetCamTheta -= dx * 0.008;
+                    targetCamPhi = Math.max(0.18, Math.min(1.38, targetCamPhi - dy * 0.007));
+                }
+            });
+
+            window.addEventListener('pointerup', e => {
+                if (isDraggingCamera) {
+                    isDraggingCamera = false;
+                    return;
+                }
+                const dist = Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y);
+                if (dist < 6 && e.target === domElement && e.button === 0) {
+                    handleCanvasClick(e, domElement);
+                }
+            });
+
+            domElement.addEventListener('wheel', e => {
+                e.preventDefault();
+                targetCamRadius = Math.max(7.5, Math.min(21, targetCamRadius + e.deltaY * 0.008));
+            }, { passive: false });
+        }
+
+        function handleCanvasClick(e, domElement) {
+            const rect = domElement.getBoundingClientRect();
+            mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+
+            // Check intersection with tiles or pieces
+            const tileList = tileMeshes.flat();
+            const hits = raycaster.intersectObjects([...tileList, ...piecesGroup.children], true);
+            if (!hits.length) return;
+
+            let hitObj = hits[0].object;
+            while (hitObj && !hitObj.userData.isTile && !hitObj.userData.isPiece) {
+                hitObj = hitObj.parent;
+            }
+            if (!hitObj) return;
+
+            const { r, c } = hitObj.userData;
+
+            // If in Board Editor Mode, paint or erase square!
+            if (currentMainTab === 'editor') {
+                paintBoardSquare(r, c);
+                return;
+            }
+
+            // If in Model Forge Mode, clicking a piece selects its model type to edit!
+            if (currentMainTab === 'models' && board[r][c]) {
+                selectModelPieceToEdit(board[r][c].type);
+                showToast(`Editing ${PIECE_TYPES[board[r][c].type].name} 3D Model`);
+                return;
+            }
+
+            // Standard Match Gameplay
+            if (gameOver || controllers[turn] !== 'human') return;
+
+            // Check if clicked square is a legal destination for currently selected piece
+            const chosenMove = legalMovesForSelected.find(m => m.toR === r && m.toC === c);
+            if (chosenMove) {
+                if (chosenMove.promotion) {
+                    openPromotionModal(chosenMove);
+                } else {
+                    executeMove(chosenMove);
+                }
+                return;
+            }
+
+            // Otherwise select friendly piece
+            const clickedPiece = board[r][c];
+            if (clickedPiece && clickedPiece.color === turn) {
+                selectedSquare = { r, c };
+                const allLegal = getAllLegalMoves(board, turn, enPassantTarget);
+                legalMovesForSelected = allLegal.filter(m => m.fromR === r && m.fromC === c);
+                playSound('paint');
+                renderBoardHighlights();
+            } else {
+                selectedSquare = null;
+                legalMovesForSelected = [];
+                renderBoardHighlights();
+            }
+        }
+
+        function openPromotionModal(move) {
+            const modal = document.getElementById('promotion-modal');
+            const container = document.getElementById('promotion-options');
+            container.innerHTML = '';
+
+            const promoTypes = ['q', 'c', 'a', 'r', 'b', 'n'];
+            promoTypes.forEach(t => {
+                const info = PIECE_TYPES[t];
+                const btn = document.createElement('button');
+                btn.className = 'btn-game p-3 rounded-xl bg-slate-800 hover:bg-amber-500/20 border border-slate-700 hover:border-amber-500 flex flex-col items-center gap-1';
+                btn.innerHTML = `
+                    <i class="fa-solid ${info.icon} text-2xl text-amber-400"></i>
+                    <span class="text-xs font-bold text-white">${info.name}</span>
+                    <span class="text-[10px] text-slate-400">${info.badge || info.symbol}</span>
+                `;
+                btn.onclick = () => {
+                    modal.classList.add('hidden');
+                    move.promoteTo = t;
+                    executeMove(move);
+                };
+                container.appendChild(btn);
+            });
+            modal.classList.remove('hidden');
+        }
+
+        function formatAlgebraic(bBefore, move) {
+            const files = 'abcdefgh';
+            const p = bBefore[move.fromR][move.fromC];
+            if (move.castle === 'K') return 'O-O';
+            if (move.castle === 'Q') return 'O-O-O';
+            const sym = p.type === 'p' ? (move.capture ? files[move.fromC] : '') : PIECE_TYPES[p.type].symbol;
+            const cap = move.capture ? 'x' : '';
+            const dest = files[move.toC] + (8 - move.toR);
+            const promo = move.promotion ? '=' + (move.promoteTo || 'q').toUpperCase() : '';
+            return `${sym}${cap}${dest}${promo}`;
+        }
+
+        function executeMove(move) {
+            // Save snapshot for Undo
+            stateSnapshots.push({
+                board: cloneBoardGrid(board),
+                turn,
+                enPassantTarget: enPassantTarget ? { ...enPassantTarget } : null,
+                lastMove: lastMove ? { ...lastMove } : null,
+                moveHistory: [...moveHistory],
+                gameOver
+            });
+
+            const notation = formatAlgebraic(board, move);
+            board = applyMoveOnClone(board, move);
+
+            if (move.doublePawn) {
+                enPassantTarget = { r: (move.fromR + move.toR) / 2, c: move.fromC };
+            } else {
+                enPassantTarget = null;
+            }
+
+            lastMove = { from: { r: move.fromR, c: move.fromC }, to: { r: move.toR, c: move.toC } };
+            selectedSquare = null;
+            legalMovesForSelected = [];
+
+            const nextTurn = turn === 'w' ? 'b' : 'w';
+            const inCheck = isKingInCheck(board, nextTurn);
+            const nextLegal = getAllLegalMoves(board, nextTurn, enPassantTarget);
+
+            let suffix = '';
+            if (nextLegal.length === 0) {
+                if (inCheck) {
+                    suffix = '#';
+                    gameOver = true;
+                    playSound('victory');
+                } else {
+                    gameOver = true;
+                    playSound('check');
+                }
+            } else if (inCheck) {
+                suffix = '+';
+                playSound('check');
+            } else if (move.capture) {
+                playSound('capture');
+            } else {
+                playSound('move');
+            }
+
+            moveHistory.push({ color: turn, text: notation + suffix });
+            turn = nextTurn;
+
+            rebuildAll3DPieces();
+            updateMatchHUD();
+            scheduleBotMoveIfNeeded();
+        }
+
+        function undoLastMove() {
+            if (!stateSnapshots.length) {
+                showToast('No moves to undo');
+                return;
+            }
+            clearTimeout(botTimer);
+            botThinking = false;
+
+            // If playing human vs bot, undo 2 plies if possible to return to human's turn
+            let snap = stateSnapshots.pop();
+            if (controllers.w !== controllers.b && stateSnapshots.length > 0 && snap.turn !== turn) {
+                snap = stateSnapshots.pop();
+            }
+            board = snap.board;
+            turn = snap.turn;
+            enPassantTarget = snap.enPassantTarget;
+            lastMove = snap.lastMove;
+            moveHistory = snap.moveHistory;
+            gameOver = false;
+            selectedSquare = null;
+            legalMovesForSelected = [];
+
+            rebuildAll3DPieces();
+            updateMatchHUD();
+            showToast('Move undone');
+        }
+
+        function evaluateBoardForBot(bState, botCfg) {
+            let score = 0; // positive favors White, negative favors Black
+            const wKing = findKingSquare(bState, 'w');
+            const bKing = findKingSquare(bState, 'b');
+
+            const greedMult = (botCfg.greed || 100) / 100;
+            const posMult = (botCfg.positional || 100) / 100;
+            const pawnMult = (botCfg.pawnPush || 100) / 100;
+            const aggroMult = (botCfg.aggression || 100) / 100;
+
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const p = bState[r][c];
+                    if (!p) continue;
+                    const sign = p.color === 'w' ? 1 : -1;
+
+                    // 1. Material Value (with Favorite Piece multiplier)
+                    let val = PIECE_TYPES[p.type].baseValue * greedMult;
+                    if (botCfg.favoritePiece === p.type) {
+                        val *= 2.1;
+                    }
+
+                    // 2. Center Control Bonus
+                    const centerDist = Math.abs(3.5 - r) + Math.abs(3.5 - c);
+                    const centerBonus = (7 - centerDist) * 8 * posMult;
+
+                    // 3. Pawn Advancement Bonus
+                    let advanceBonus = 0;
+                    if (p.type === 'p') {
+                        const progress = p.color === 'w' ? (6 - r) : (r - 1);
+                        advanceBonus = progress * progress * 6 * pawnMult;
+                    }
+
+                    // 4. King Hunt / Aggression (proximity of attacking pieces to enemy King)
+                    let kingAttackBonus = 0;
+                    const enemyKing = p.color === 'w' ? bKing : wKing;
+                    if (enemyKing && p.type !== 'k') {
+                        const distToEnemyKing = Math.abs(enemyKing.r - r) + Math.abs(enemyKing.c - c);
+                        kingAttackBonus = (14 - distToEnemyKing) * 4.5 * aggroMult;
+                    }
+
+                    score += sign * (val + centerBonus + advanceBonus + kingAttackBonus);
+                }
+            }
+            return score;
+        }
+
+        function computeBestBotMove(bState, side, epTarget, botCfg) {
+            const legalMoves = getAllLegalMoves(bState, side, epTarget);
+            if (!legalMoves.length) return null;
+
+            // If Chaos / Blunder factor triggers, pick a random or semi-random move
+            if (botCfg.chaos > 0 && Math.random() * 100 < botCfg.chaos) {
+                return legalMoves[Math.floor(Math.random() * legalMoves.length)];
+            }
+
+            // Order moves: captures & promotions first for faster Alpha-Beta pruning
+            legalMoves.sort((a, b) => ((b.capture ? 10 : 0) + (b.promotion ? 20 : 0)) - ((a.capture ? 10 : 0) + (a.promotion ? 20 : 0)));
+
+            const maxDepth = Math.min(4, Math.max(1, botCfg.depth || 2));
+            const isMax = side === 'w';
+            let bestMove = legalMoves[0];
+            let bestScore = isMax ? -Infinity : Infinity;
+
+            function alphaBeta(state, depth, alpha, beta, maximizingSide) {
+                const curColor = maximizingSide ? 'w' : 'b';
+                if (depth === 0) {
+                    return evaluateBoardForBot(state, botCfg);
+                }
+                const moves = getAllLegalMoves(state, curColor, null);
+                if (moves.length === 0) {
+                    if (isKingInCheck(state, curColor)) {
+                        return maximizingSide ? (-99999 - depth * 100) : (99999 + depth * 100);
+                    }
+                    return 0; // Stalemate
+                }
+
+                // Limit branching on ultra-dense custom boards to keep UI smooth
+                const branchLimit = depth >= 3 ? 28 : 45;
+                const slicedMoves = moves.slice(0, branchLimit);
+
+                if (maximizingSide) {
+                    let maxEval = -Infinity;
+                    for (const m of slicedMoves) {
+                        const nextS = applyMoveOnClone(state, m);
+                        const ev = alphaBeta(nextS, depth - 1, alpha, beta, false);
+                        if (ev > maxEval) maxEval = ev;
+                        if (ev > alpha) alpha = ev;
+                        if (beta <= alpha) break;
+                    }
+                    return maxEval;
+                } else {
+                    let minEval = Infinity;
+                    for (const m of slicedMoves) {
+                        const nextS = applyMoveOnClone(state, m);
+                        const ev = alphaBeta(nextS, depth - 1, alpha, beta, true);
+                        if (ev < minEval) minEval = ev;
+                        if (ev < beta) beta = ev;
+                        if (beta <= alpha) break;
+                    }
+                    return minEval;
+                }
+            }
+
+            for (const m of legalMoves) {
+                if (m.promotion && !m.promoteTo) {
+                    m.promoteTo = (botCfg.favoritePiece && botCfg.favoritePiece !== 'none' && botCfg.favoritePiece !== 'p') ? botCfg.favoritePiece : 'q';
+                }
+                const nextState = applyMoveOnClone(bState, m);
+                // Add slight jitter so identical evaluations vary naturally
+                const jitter = (Math.random() - 0.5) * 8;
+                const score = alphaBeta(nextState, maxDepth - 1, -Infinity, Infinity, !isMax) + jitter;
+
+                if (isMax) {
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestMove = m;
+                    }
+                } else {
+                    if (score < bestScore) {
+                        bestScore = score;
+                        bestMove = m;
+                    }
+                }
+            }
+            return bestMove;
+        }
+
+        function scheduleBotMoveIfNeeded() {
+            clearTimeout(botTimer);
+            document.getElementById('hud-white-thinking').classList.add('hidden');
+            document.getElementById('hud-black-thinking').classList.add('hidden');
+
+            if (gameOver || botsPaused || currentMainTab === 'editor') return;
+            if (controllers[turn] !== 'bot') return;
+
+            botThinking = true;
+            const thinkBadge = turn === 'w' ? 'hud-white-thinking' : 'hud-black-thinking';
+            document.getElementById(thinkBadge).classList.remove('hidden');
+
+            botTimer = setTimeout(() => {
+                if (gameOver || botsPaused || controllers[turn] !== 'bot') return;
+                const cfg = botConfigs[turn];
+                const move = computeBestBotMove(board, turn, enPassantTarget, cfg);
+                botThinking = false;
+                document.getElementById(thinkBadge).classList.add('hidden');
+                if (move) {
+                    executeMove(move);
+                }
+            }, 340);
+        }
+
+        function triggerBotHint() {
+            if (gameOver) return;
+            const cfg = botConfigs[turn];
+            const move = computeBestBotMove(board, turn, enPassantTarget, cfg);
+            if (move) {
+                executeMove(move);
+            }
+        }
+
+        function toggleBotPause() {
+            botsPaused = !botsPaused;
+            document.getElementById('pause-icon').className = botsPaused ? 'fa-solid fa-play text-emerald-400' : 'fa-solid fa-pause text-cyan-400';
+            document.getElementById('pause-label').textContent = botsPaused ? 'Resume AI' : 'Pause AI';
+            if (!botsPaused) scheduleBotMoveIfNeeded();
+        }
+
+        function startBotVsBotSpectator() {
+            controllers.w = 'bot';
+            controllers.b = 'bot';
+            document.getElementById('white-controller-select').value = 'bot';
+            document.getElementById('black-controller-select').value = 'bot';
+            botsPaused = false;
+            switchMainTab('play');
+            updateMatchHUD();
+            scheduleBotMoveIfNeeded();
+            showToast('Bot vs. Bot Arena Started!');
+        }
+
+        function renderEditorPalette() {
+            const grid = document.getElementById('editor-piece-grid');
+            const floatBar = document.getElementById('floating-piece-buttons');
+            grid.innerHTML = '';
+            floatBar.innerHTML = '';
+
+            const keys = ['k', 'q', 'c', 'a', 'r', 'b', 'n', 'p', 'erase'];
+            keys.forEach(k => {
+                const isActive = editorBrushType === k;
+                if (k === 'erase') {
+                    const btn = document.createElement('button');
+                    btn.className = `btn-game p-2 rounded-xl border border-slate-700 bg-slate-900/90 flex flex-col items-center gap-1 ${isActive ? 'piece-brush-active' : ''}`;
+                    btn.innerHTML = `
+                        <i class="fa-solid fa-eraser text-lg text-rose-400"></i>
+                        <span class="text-[11px] font-bold text-white">Erase Square</span>
+                    `;
+                    btn.onclick = () => { editorBrushType = 'erase'; renderEditorPalette(); };
+                    grid.appendChild(btn);
+
+                    const fBtn = document.createElement('button');
+                    fBtn.className = `px-2.5 py-1.5 rounded-lg border border-slate-700 text-xs ${isActive ? 'piece-brush-active text-rose-300' : 'bg-slate-800 text-slate-300'}`;
+                    fBtn.innerHTML = `<i class="fa-solid fa-eraser"></i>`;
+                    fBtn.onclick = () => { editorBrushType = 'erase'; renderEditorPalette(); };
+                    floatBar.appendChild(fBtn);
+                } else {
+                    const info = PIECE_TYPES[k];
+                    const btn = document.createElement('button');
+                    btn.className = `btn-game p-2 rounded-xl border border-slate-700 bg-slate-900/90 flex flex-col items-center gap-0.5 ${isActive ? 'piece-brush-active' : ''}`;
+                    btn.innerHTML = `
+                        <i class="fa-solid ${info.icon} text-lg ${editorBrushColor === 'w' ? 'text-amber-300' : 'text-cyan-400'}"></i>
+                        <span class="text-[11px] font-bold text-white">${info.name}</span>
+                        <span class="text-[9px] text-slate-400">${info.badge || info.symbol}</span>
+                    `;
+                    btn.onclick = () => { editorBrushType = k; renderEditorPalette(); };
+                    grid.appendChild(btn);
+
+                    const fBtn = document.createElement('button');
+                    fBtn.className = `px-2.5 py-1.5 rounded-lg border border-slate-700 text-xs flex items-center gap-1 ${isActive ? 'piece-brush-active' : 'bg-slate-800 text-slate-300'}`;
+                    fBtn.innerHTML = `<i class="fa-solid ${info.icon} ${editorBrushColor === 'w' ? 'text-amber-300' : 'text-cyan-400'}"></i><span class="font-bold">${info.symbol}</span>`;
+                    fBtn.onclick = () => { editorBrushType = k; renderEditorPalette(); };
+                    floatBar.appendChild(fBtn);
+                }
+            });
+        }
+
+        function setEditorColor(col) {
+            editorBrushColor = col;
+            const wBtn = document.getElementById('editor-color-w');
+            const bBtn = document.getElementById('editor-color-b');
+            const fwBtn = document.getElementById('float-color-w');
+            const fbBtn = document.getElementById('float-color-b');
+            if (col === 'w') {
+                wBtn.className = 'btn-game py-2 rounded-lg text-xs font-bold bg-amber-500 text-slate-950 shadow';
+                bBtn.className = 'btn-game py-2 rounded-lg text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700';
+                fwBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500 text-slate-950 shrink-0';
+                fbBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-800 text-slate-300 shrink-0';
+            } else {
+                bBtn.className = 'btn-game py-2 rounded-lg text-xs font-bold bg-cyan-500 text-slate-950 shadow';
+                wBtn.className = 'btn-game py-2 rounded-lg text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700';
+                fbBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-bold bg-cyan-500 text-slate-950 shrink-0';
+                fwBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-800 text-slate-300 shrink-0';
+            }
+            renderEditorPalette();
+        }
+
+        function paintBoardSquare(r, c) {
+            if (editorBrushType === 'erase') {
+                board[r][c] = null;
+            } else {
+                // If placing a King, remove existing King of that color so each side has 1 Royal King
+                if (editorBrushType === 'k') {
+                    for (let rr = 0; rr < 8; rr++) {
+                        for (let cc = 0; cc < 8; cc++) {
+                            if (board[rr][cc] && board[rr][cc].color === editorBrushColor && board[rr][cc].type === 'k') {
+                                board[rr][cc] = null;
+                            }
+                        }
+                    }
+                }
+                board[r][c] = { type: editorBrushType, color: editorBrushColor, moved: false };
+            }
+            customStartingBoard = cloneBoardGrid(board);
+            playSound('paint');
+            rebuildAll3DPieces();
+        }
+
+        function ensureBothKingsExist(bGrid) {
+            if (!findKingSquare(bGrid, 'w')) bGrid[7][4] = { type: 'k', color: 'w', moved: false };
+            if (!findKingSquare(bGrid, 'b')) bGrid[0][4] = { type: 'k', color: 'b', moved: false };
+        }
+
+        function mirrorWhiteToBlack() {
+            for (let r = 0; r < 4; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const src = board[7 - r][c];
+                    board[r][c] = src ? { type: src.type, color: 'b', moved: false } : null;
+                }
+            }
+            ensureBothKingsExist(board);
+            customStartingBoard = cloneBoardGrid(board);
+            rebuildAll3DPieces();
+            showToast('Mirrored White setup onto Black side!');
+        }
+
+        function clearBoardExceptKings() {
+            board = Array(8).fill(null).map(() => Array(8).fill(null));
+            board[7][4] = { type: 'k', color: 'w', moved: false };
+            board[0][4] = { type: 'k', color: 'b', moved: false };
+            customStartingBoard = cloneBoardGrid(board);
+            rebuildAll3DPieces();
+            showToast('Cleared board to Kings only');
+        }
+
+        function randomizeSymmetricArmy() {
+            board = Array(8).fill(null).map(() => Array(8).fill(null));
+            const pool = ['q', 'c', 'a', 'r', 'b', 'n', 'p'];
+            for (let c = 0; c < 8; c++) {
+                const backPiece = c === 4 ? 'k' : pool[Math.floor(Math.random() * 6)];
+                const frontPiece = pool[Math.floor(Math.random() * pool.length)];
+                board[7][c] = { type: backPiece, color: 'w', moved: false };
+                board[6][c] = { type: frontPiece, color: 'w', moved: false };
+                board[0][c] = { type: backPiece, color: 'b', moved: false };
+                board[1][c] = { type: frontPiece, color: 'b', moved: false };
+            }
+            customStartingBoard = cloneBoardGrid(board);
+            playSound('victory');
+            rebuildAll3DPieces();
+            showToast('Generated Random Symmetric Chaos Army!');
+        }
+
+        function loadBoardPreset(preset) {
+            const g = Array(8).fill(null).map(() => Array(8).fill(null));
+            if (preset === 'standard') {
+                customStartingBoard = createStandardBoardGrid();
+            } else if (preset === 'chess960') {
+                const rank = ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'].sort(() => Math.random() - 0.5);
+                for (let c = 0; c < 8; c++) {
+                    g[0][c] = { type: rank[c], color: 'b', moved: false };
+                    g[1][c] = { type: 'p', color: 'b', moved: false };
+                    g[6][c] = { type: 'p', color: 'w', moved: false };
+                    g[7][c] = { type: rank[c], color: 'w', moved: false };
+                }
+                customStartingBoard = g;
+            } else if (preset === 'fairy') {
+                const rank = ['r', 'c', 'a', 'q', 'k', 'a', 'c', 'r'];
+                for (let c = 0; c < 8; c++) {
+                    g[0][c] = { type: rank[c], color: 'b', moved: false };
+                    g[1][c] = { type: 'p', color: 'b', moved: false };
+                    g[6][c] = { type: 'p', color: 'w', moved: false };
+                    g[7][c] = { type: rank[c], color: 'w', moved: false };
+                }
+                customStartingBoard = g;
+            } else if (preset === 'horde') {
+                const bRank = ['r', 'c', 'b', 'q', 'k', 'b', 'c', 'r'];
+                for (let c = 0; c < 8; c++) {
+                    g[0][c] = { type: bRank[c], color: 'b', moved: false };
+                    g[1][c] = { type: 'p', color: 'b', moved: false };
+                    g[5][c] = { type: 'p', color: 'w', moved: false };
+                    g[6][c] = { type: 'p', color: 'w', moved: false };
+                    g[7][c] = { type: c === 4 ? 'k' : 'p', color: 'w', moved: false };
+                }
+                customStartingBoard = g;
+            } else if (preset === 'cavalry') {
+                const rank = ['n', 'a', 'n', 'q', 'k', 'n', 'a', 'n'];
+                for (let c = 0; c < 8; c++) {
+                    g[0][c] = { type: rank[c], color: 'b', moved: false };
+                    g[1][c] = { type: c % 2 === 0 ? 'n' : 'p', color: 'b', moved: false };
+                    g[6][c] = { type: c % 2 === 0 ? 'n' : 'p', color: 'w', moved: false };
+                    g[7][c] = { type: rank[c], color: 'w', moved: false };
+                }
+                customStartingBoard = g;
+            } else if (preset === 'queens') {
+                const rank = ['c', 'q', 'q', 'q', 'k', 'q', 'q', 'c'];
+                for (let c = 0; c < 8; c++) {
+                    g[0][c] = { type: rank[c], color: 'b', moved: false };
+                    g[1][c] = { type: 'p', color: 'b', moved: false };
+                    g[6][c] = { type: 'p', color: 'w', moved: false };
+                    g[7][c] = { type: rank[c], color: 'w', moved: false };
+                }
+                customStartingBoard = g;
+            }
+
+            board = cloneBoardGrid(customStartingBoard);
+            resetGameToStartingBoard();
+            showToast(`Loaded "${preset.toUpperCase()}" starting army!`);
+        }
+
+        function setStartingTurn(col) {
+            customStartingTurn = col;
+            turn = col;
+            updateMatchHUD();
+        }
+
+        function saveCustomSetupAndPlay() {
+            ensureBothKingsExist(board);
+            customStartingBoard = cloneBoardGrid(board);
+            resetGameToStartingBoard();
+            switchMainTab('play');
+            showToast('Custom board setup applied! Match started.');
+        }
+
+        function resetGameToStartingBoard() {
+            clearTimeout(botTimer);
+            ensureBothKingsExist(customStartingBoard);
+            board = cloneBoardGrid(customStartingBoard);
+            turn = customStartingTurn;
+            enPassantTarget = null;
+            selectedSquare = null;
+            legalMovesForSelected = [];
+            moveHistory = [];
+            stateSnapshots = [];
+            lastMove = null;
+            gameOver = false;
+            botThinking = false;
+            rebuildAll3DPieces();
+            updateMatchHUD();
+            scheduleBotMoveIfNeeded();
+        }
+
+        function renderModelPieceSelector() {
+            const container = document.getElementById('model-piece-selector');
+            container.innerHTML = '';
+            Object.keys(PIECE_TYPES).forEach(k => {
+                const info = PIECE_TYPES[k];
+                const active = selectedModelPiece === k;
+                const btn = document.createElement('button');
+                btn.className = `btn-game p-2 rounded-lg border text-center flex flex-col items-center gap-0.5 ${active ? 'tab-active' : 'bg-slate-900 border-slate-800 text-slate-300'}`;
+                btn.innerHTML = `
+                    <i class="fa-solid ${info.icon} text-sm"></i>
+                    <span class="text-[10px] font-bold">${info.name}</span>
+                `;
+                btn.onclick = () => selectModelPieceToEdit(k);
+                container.appendChild(btn);
+            });
+        }
+
+        function selectModelPieceToEdit(typeKey) {
+            selectedModelPiece = typeKey;
+            renderModelPieceSelector();
+            const cfg = pieceModelConfigs[typeKey];
+            document.getElementById('model-body-select').value = cfg.body;
+            document.getElementById('model-head-select').value = cfg.head;
+            document.getElementById('slider-model-height').value = cfg.heightScale;
+            document.getElementById('val-model-height').textContent = cfg.heightScale.toFixed(2) + 'x';
+            document.getElementById('slider-model-girth').value = cfg.girthScale;
+            document.getElementById('val-model-girth').textContent = cfg.girthScale.toFixed(2) + 'x';
+            document.getElementById('model-rings-select').value = cfg.rings;
+            document.getElementById('check-model-float').checked = cfg.hover;
+        }
+
+        function updatePieceModelConfig(prop, value) {
+            pieceModelConfigs[selectedModelPiece][prop] = value;
+            if (prop === 'heightScale') {
+                document.getElementById('val-model-height').textContent = value.toFixed(2) + 'x';
+            } else if (prop === 'girthScale') {
+                document.getElementById('val-model-girth').textContent = value.toFixed(2) + 'x';
+            }
+            rebuildAll3DPieces();
+        }
+
+        function updateMaterialColors() {
+            armyMaterialSettings.wPrimary = document.getElementById('color-white-primary').value;
+            armyMaterialSettings.wAccent = document.getElementById('color-white-accent').value;
+            armyMaterialSettings.bPrimary = document.getElementById('color-black-primary').value;
+            armyMaterialSettings.bAccent = document.getElementById('color-black-accent').value;
+            armyMaterialSettings.metalness = parseFloat(document.getElementById('slider-mat-metal').value);
+            armyMaterialSettings.roughness = parseFloat(document.getElementById('slider-mat-rough').value);
+
+            document.getElementById('val-mat-metal').textContent = armyMaterialSettings.metalness.toFixed(2);
+            document.getElementById('val-mat-rough').textContent = armyMaterialSettings.roughness.toFixed(2);
+            rebuildAll3DPieces();
+        }
+
+        function applyGlobalModelTheme(theme) {
+            if (theme === 'staunton') {
+                pieceModelConfigs = {
+                    k: { body: 'lathe', head: 'cross', heightScale: 1.25, girthScale: 1.1, rings: 2, hover: false },
+                    q: { body: 'lathe', head: 'crown', heightScale: 1.15, girthScale: 1.05, rings: 2, hover: false },
+                    c: { body: 'pillar', head: 'horns', heightScale: 1.1, girthScale: 1.05, rings: 2, hover: false },
+                    a: { body: 'lathe', head: 'mitre', heightScale: 1.08, girthScale: 1.0, rings: 2, hover: false },
+                    r: { body: 'pillar', head: 'turret', heightScale: 0.95, girthScale: 1.08, rings: 1, hover: false },
+                    b: { body: 'lathe', head: 'mitre', heightScale: 1.0, girthScale: 0.95, rings: 1, hover: false },
+                    n: { body: 'obelisk', head: 'knight', heightScale: 0.98, girthScale: 1.0, rings: 1, hover: false },
+                    p: { body: 'lathe', head: 'orb', heightScale: 0.78, girthScale: 0.88, rings: 0, hover: false }
+                };
+                armyMaterialSettings = { wPrimary: '#f8fafc', wAccent: '#f59e0b', bPrimary: '#1e293b', bAccent: '#06b6d4', metalness: 0.3, roughness: 0.25 };
+            } else if (theme === 'cyberpunk') {
+                pieceModelConfigs = {
+                    k: { body: 'mecha', head: 'halo', heightScale: 1.3, girthScale: 1.1, rings: 3, hover: true },
+                    q: { body: 'mecha', head: 'horns', heightScale: 1.2, girthScale: 1.05, rings: 3, hover: true },
+                    c: { body: 'mecha', head: 'turret', heightScale: 1.12, girthScale: 1.1, rings: 3, hover: true },
+                    a: { body: 'crystal', head: 'halo', heightScale: 1.1, girthScale: 1.0, rings: 3, hover: true },
+                    r: { body: 'mecha', head: 'turret', heightScale: 1.0, girthScale: 1.1, rings: 2, hover: false },
+                    b: { body: 'obelisk', head: 'halo', heightScale: 1.05, girthScale: 0.95, rings: 3, hover: true },
+                    n: { body: 'mecha', head: 'knight', heightScale: 1.0, girthScale: 1.05, rings: 2, hover: false },
+                    p: { body: 'crystal', head: 'orb', heightScale: 0.8, girthScale: 0.85, rings: 1, hover: true }
+                };
+                armyMaterialSettings = { wPrimary: '#0f172a', wAccent: '#f43f5e', bPrimary: '#090d16', bAccent: '#00f5d4', metalness: 0.8, roughness: 0.15 };
+            } else if (theme === 'crystal') {
+                Object.keys(pieceModelConfigs).forEach(k => {
+                    pieceModelConfigs[k].body = 'crystal';
+                    pieceModelConfigs[k].rings = 1;
+                });
+                armyMaterialSettings = { wPrimary: '#ecfdf5', wAccent: '#10b981', bPrimary: '#1e1b4b', bAccent: '#a855f7', metalness: 0.2, roughness: 0.1 };
+            } else if (theme === 'gothic') {
+                Object.keys(pieceModelConfigs).forEach(k => {
+                    pieceModelConfigs[k].body = 'pillar';
+                    pieceModelConfigs[k].rings = 2;
+                    pieceModelConfigs[k].hover = false;
+                });
+                pieceModelConfigs.k.head = 'crown';
+                pieceModelConfigs.q.head = 'horns';
+                armyMaterialSettings = { wPrimary: '#fef3c7', wAccent: '#d97706', bPrimary: '#09090b', bAccent: '#ef4444', metalness: 0.65, roughness: 0.25 };
+            }
+
+            document.getElementById('color-white-primary').value = armyMaterialSettings.wPrimary;
+            document.getElementById('color-white-accent').value = armyMaterialSettings.wAccent;
+            document.getElementById('color-black-primary').value = armyMaterialSettings.bPrimary;
+            document.getElementById('color-black-accent').value = armyMaterialSettings.bAccent;
+            document.getElementById('slider-mat-metal').value = armyMaterialSettings.metalness;
+            document.getElementById('slider-mat-rough').value = armyMaterialSettings.roughness;
+
+            selectModelPieceToEdit(selectedModelPiece);
+            rebuildAll3DPieces();
+            showToast(`Applied "${theme.toUpperCase()}" 3D Model Theme!`);
+        }
+
+        function randomizeAllPieceModels() {
+            const bodies = ['lathe', 'crystal', 'pillar', 'mecha', 'obelisk'];
+            const heads = ['cross', 'crown', 'orb', 'knight', 'mitre', 'turret', 'horns', 'halo'];
+            Object.keys(pieceModelConfigs).forEach(k => {
+                pieceModelConfigs[k] = {
+                    body: bodies[Math.floor(Math.random() * bodies.length)],
+                    head: heads[Math.floor(Math.random() * heads.length)],
+                    heightScale: +(0.75 + Math.random() * 0.65).toFixed(2),
+                    girthScale: +(0.8 + Math.random() * 0.45).toFixed(2),
+                    rings: Math.floor(Math.random() * 4),
+                    hover: Math.random() > 0.55
+                };
+            });
+            selectModelPieceToEdit(selectedModelPiece);
+            rebuildAll3DPieces();
+            playSound('paint');
+            showToast('Randomized 3D Piece Geometries!');
+        }
+
+        function selectBotSideToEdit(side) {
+            activeBotEditSide = side;
+            const bTab = document.getElementById('bot-edit-tab-b');
+            const wTab = document.getElementById('bot-edit-tab-w');
+            if (side === 'b') {
+                bTab.className = 'btn-game py-2 px-3 rounded-xl font-bold text-xs border border-cyan-500 bg-cyan-500/20 text-cyan-300 flex items-center justify-center gap-2';
+                wTab.className = 'btn-game py-2 px-3 rounded-xl font-bold text-xs border border-slate-700 bg-slate-900 text-slate-400 flex items-center justify-center gap-2';
+            } else {
+                wTab.className = 'btn-game py-2 px-3 rounded-xl font-bold text-xs border border-amber-500 bg-amber-500/20 text-amber-300 flex items-center justify-center gap-2';
+                bTab.className = 'btn-game py-2 px-3 rounded-xl font-bold text-xs border border-slate-700 bg-slate-900 text-slate-400 flex items-center justify-center gap-2';
+            }
+            syncBotUIFromConfig();
+        }
+
+        function syncBotUIFromConfig() {
+            const cfg = botConfigs[activeBotEditSide];
+            document.getElementById('bot-name-input').value = cfg.name;
+            document.getElementById('slider-bot-depth').value = cfg.depth;
+            document.getElementById('val-bot-depth').textContent = cfg.depth + (cfg.depth === 1 ? ' Ply' : ' Plies');
+            document.getElementById('slider-bot-aggression').value = cfg.aggression;
+            document.getElementById('val-bot-aggression').textContent = cfg.aggression + '%';
+            document.getElementById('slider-bot-greed').value = cfg.greed;
+            document.getElementById('val-bot-greed').textContent = cfg.greed + '%';
+            document.getElementById('slider-bot-positional').value = cfg.positional;
+            document.getElementById('val-bot-positional').textContent = cfg.positional + '%';
+            document.getElementById('slider-bot-pawn').value = cfg.pawnPush;
+            document.getElementById('val-bot-pawn').textContent = cfg.pawnPush + '%';
+            document.getElementById('slider-bot-chaos').value = cfg.chaos;
+            document.getElementById('val-bot-chaos').textContent = cfg.chaos + '%';
+            document.getElementById('bot-fav-piece').value = cfg.favoritePiece;
+            updateMatchHUD();
+        }
+
+        function updateBotParam(param, val) {
+            botConfigs[activeBotEditSide][param] = val;
+            syncBotUIFromConfig();
+        }
+
+        function applyBotPreset(preset) {
+            const target = botConfigs[activeBotEditSide];
+            if (preset === 'grandmaster') {
+                Object.assign(target, { name: 'Grandmaster Omni', depth: 3, aggression: 115, greed: 110, positional: 130, pawnPush: 115, chaos: 0, favoritePiece: 'none' });
+            } else if (preset === 'berserker') {
+                Object.assign(target, { name: 'Valkyrie Berserker', depth: 3, aggression: 240, greed: 85, positional: 90, pawnPush: 140, chaos: 10, favoritePiece: 'q' });
+            } else if (preset === 'greed') {
+                Object.assign(target, { name: 'Goblin Hoarder', depth: 2, aggression: 60, greed: 250, positional: 50, pawnPush: 80, chaos: 5, favoritePiece: 'none' });
+            } else if (preset === 'cavalry') {
+                Object.assign(target, { name: 'Cavalry Cultist', depth: 3, aggression: 150, greed: 110, positional: 160, pawnPush: 70, chaos: 5, favoritePiece: 'n' });
+            } else if (preset === 'swarm') {
+                Object.assign(target, { name: 'Pawn Storm AI', depth: 3, aggression: 130, greed: 95, positional: 120, pawnPush: 250, chaos: 0, favoritePiece: 'p' });
+            } else if (preset === 'chaos') {
+                Object.assign(target, { name: 'Chaos Jester', depth: 2, aggression: 180, greed: 120, positional: 80, pawnPush: 150, chaos: 65, favoritePiece: 'c' });
+            }
+            syncBotUIFromConfig();
+            showToast(`Loaded "${target.name}" AI profile!`);
+        }
+
+        function updateController(side, mode) {
+            controllers[side] = mode;
+            updateMatchHUD();
+            scheduleBotMoveIfNeeded();
+        }
+
+        function updateMatchHUD() {
+            // Update White & Black HUD Cards
+            const wIsBot = controllers.w === 'bot';
+            const bIsBot = controllers.b === 'bot';
+            document.getElementById('hud-white-name').textContent = wIsBot ? botConfigs.w.name : 'White Player';
+            document.getElementById('hud-white-badge').textContent = wIsBot ? `AI (${botConfigs.w.depth}p)` : 'Human';
+            document.getElementById('hud-white-icon').innerHTML = `<i class="fa-solid ${wIsBot ? 'fa-robot' : 'fa-user'}"></i>`;
+
+            document.getElementById('hud-black-name').textContent = bIsBot ? botConfigs.b.name : 'Black Player';
+            document.getElementById('hud-black-badge').textContent = bIsBot ? `AI (${botConfigs.b.depth}p)` : 'Human';
+            document.getElementById('hud-black-icon').innerHTML = `<i class="fa-solid ${bIsBot ? 'fa-robot' : 'fa-user'}"></i>`;
+
+            // Evaluation Bar
+            const rawEval = evaluateBoardForBot(board, { greed: 100, positional: 100, pawnPush: 100, aggression: 100, favoritePiece: 'none' }) / 100;
+            const clamped = Math.max(-10, Math.min(10, rawEval));
+            const whitePct = 50 + (clamped / 10) * 45;
+            document.getElementById('eval-bar-white').style.height = `${whitePct}%`;
+            document.getElementById('eval-bar-black').style.height = `${100 - whitePct}%`;
+            document.getElementById('eval-score-pill').textContent = (rawEval >= 0 ? '+' : '') + rawEval.toFixed(1);
+
+            // Turn & Check Status Banner
+            const statusEl = document.getElementById('status-text');
+            if (currentMainTab === 'editor') {
+                statusEl.textContent = 'Board Sandbox Mode — Click Squares to Place Pieces';
+            } else {
+                const legal = getAllLegalMoves(board, turn, enPassantTarget);
+                const inCheck = isKingInCheck(board, turn);
+                const sideName = turn === 'w' ? 'White' : 'Black';
+                if (legal.length === 0) {
+                    if (inCheck) {
+                        const winner = turn === 'w' ? 'Black' : 'White';
+                        statusEl.textContent = `CHECKMATE! ${winner} Wins!`;
+                    } else {
+                        statusEl.textContent = 'STALEMATE — Draw Match';
+                    }
+                } else if (inCheck) {
+                    statusEl.textContent = `${sideName} is in CHECK!`;
+                } else {
+                    statusEl.textContent = `${sideName}'s Turn (${controllers[turn] === 'bot' ? 'AI' : 'Human'})`;
+                }
+            }
+
+            // Move History List
+            const histEl = document.getElementById('move-history-list');
+            document.getElementById('move-count-badge').textContent = `Turn ${Math.floor(moveHistory.length / 2) + 1}`;
+            if (moveHistory.length === 0) {
+                histEl.innerHTML = `<div class="text-slate-500 italic text-center py-8">Click any piece on the 3D board to begin...</div>`;
+            } else {
+                let html = '';
+                for (let i = 0; i < moveHistory.length; i += 2) {
+                    const num = Math.floor(i / 2) + 1;
+                    const wMove = moveHistory[i] ? moveHistory[i].text : '';
+                    const bMove = moveHistory[i + 1] ? moveHistory[i + 1].text : '';
+                    html += `
+                        <div class="flex items-center justify-between px-2 py-1 rounded bg-slate-900/60 border border-slate-800/60">
+                            <span class="text-slate-500 w-8">${num}.</span>
+                            <span class="text-amber-300 font-semibold flex-1">${wMove}</span>
+                            <span class="text-cyan-300 font-semibold flex-1">${bMove}</span>
+                        </div>
+                    `;
+                }
+                histEl.innerHTML = html;
+                histEl.scrollTop = histEl.scrollHeight;
+            }
+        }
+
+        function switchMainTab(tab) {
+            currentMainTab = tab;
+            ['play', 'editor', 'models', 'bots'].forEach(t => {
+                document.getElementById(`panel-${t}`).classList.toggle('hidden', t !== tab);
+                document.getElementById(`nav-tab-${t}`).classList.toggle('tab-active', t === tab);
+            });
+            document.getElementById('editor-floating-bar').classList.toggle('hidden', tab !== 'editor');
+
+            selectedSquare = null;
+            legalMovesForSelected = [];
+            renderBoardHighlights();
+            updateMatchHUD();
+            if (tab === 'play') {
+                scheduleBotMoveIfNeeded();
+            }
+        }
+
+        function setCameraPreset(mode) {
+            if (mode === 'top') {
+                targetCamPhi = 0.18;
+                targetCamRadius = 14.5;
+            } else {
+                targetCamPhi = 0.88;
+                targetCamRadius = 13.8;
+            }
+        }
+
+        function flipCameraSide() {
+            const isNearBlack = Math.abs(targetCamTheta - Math.PI) < 0.8;
+            targetCamTheta = isNearBlack ? 0 : Math.PI;
+        }
+
+        function updateCameraPosition(instant = false) {
+            if (instant) {
+                camTheta = targetCamTheta;
+                camPhi = targetCamPhi;
+                camRadius = targetCamRadius;
+            } else {
+                camTheta += (targetCamTheta - camTheta) * 0.1;
+                camPhi += (targetCamPhi - camPhi) * 0.1;
+                camRadius += (targetCamRadius - camRadius) * 0.1;
+            }
+            camera.position.x = camRadius * Math.sin(camPhi) * Math.sin(camTheta);
+            camera.position.y = camRadius * Math.cos(camPhi);
+            camera.position.z = camRadius * Math.sin(camPhi) * Math.cos(camTheta);
+            camera.lookAt(0, 0.2, 0);
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('canvas-container');
+            if (!container || !renderer || !camera) return;
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        function animate(time) {
+            requestAnimationFrame(animate);
+            updateCameraPosition(false);
+
+            // Animate levitating / hovering pieces and orbital energy rings
+            const t = (time || 0) * 0.0025;
+            for (const item of pieceMeshes) {
+                if (item.hover) {
+                    item.mesh.position.y = 0.18 + Math.sin(t + item.phase) * 0.08;
+                }
+                item.mesh.traverse(child => {
+                    if (child.userData && child.userData.spinRing) {
+                        child.rotation.z = t * 1.2;
+                        child.rotation.x = Math.PI / 3 + Math.sin(t + item.phase) * 0.25;
+                    }
+                });
+            }
+
+            if (renderer && scene && camera) {
+                renderer.render(scene, camera);
+            }
+        }
+
+        window.onload = function () {
+            board = cloneBoardGrid(customStartingBoard);
+            renderEditorPalette();
+            renderModelPieceSelector();
+            selectModelPieceToEdit('k');
+            syncBotUIFromConfig();
+            initThreeScene();
+            updateMatchHUD();
+            animate();
+        };
+    </script>
+</body>
+</html>
